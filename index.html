@@ -8700,7 +8700,6 @@
          backend so the key is never exposed to users. */
 
       async function resolveAccountLive(accountNumber, bankCode) {
-
         const response = await fetch('/api/verify-account', {
           method: 'POST',
           headers: {
@@ -8712,13 +8711,18 @@
           })
         });
 
-        const data = await response.json();
-
-        if (!data.status) {
-          throw new Error(data.message || 'Could not resolve account');
+        let data = null;
+        try {
+          data = await response.json();
+        } catch (e) {
+          data = { status: false, message: 'Verification service returned an invalid response.' };
         }
 
-        return data.data.account_name;
+        if (!response.ok || !data?.status) {
+          throw new Error(data?.message || 'Could not resolve account');
+        }
+
+        return data?.data?.account_name || null;
       }
       let cur = 's-home', pinArr = [], balVis = false, pushEnabled = true, svcReturnTo = 's-home', pendingTransfer = null, lastReceipt = null;
       let walletBalance = 128450.00;
@@ -9794,14 +9798,13 @@
 
         let resolvedName = null;
 
-        if (ACCOUNT_VERIFY_CONFIG.secretKey && selBank && selBank.code) {
+        if (selBank && selBank.code) {
           try {
             resolvedName = await resolveAccountLive(acct, selBank.code);
           } catch (err) {
             checking.style.display = 'none';
             clearBtn.style.display = 'flex';
             isVerifying = false;
-            // Show error in the verify box
             vb.style.display = 'flex';
             vb.style.background = '#FEF2F2';
             vb.style.borderColor = '#FCA5A5';
@@ -9812,13 +9815,12 @@
             return;
           }
         } else {
-          // No API key configured — show an error
           checking.style.display = 'none';
           clearBtn.style.display = 'flex';
           isVerifying = false;
           vb.style.display = 'flex';
           vb.style.background = '#FEF2F2';
-          document.getElementById('vb-name').textContent = 'Verification unavailable';
+          document.getElementById('vb-name').textContent = 'Select a bank first';
           document.getElementById('vb-name').style.color = '#DC2626';
           verAcc = null;
           updateSendBtn();
