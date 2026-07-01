@@ -8698,7 +8698,7 @@
 
       async function resolveAccountLive(accountNumber, bankCode) {
 
-        const response = await fetch('/api/resolve-account', {
+        const response = await fetch('/api/verify-account', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
