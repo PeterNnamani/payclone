@@ -9674,23 +9674,11 @@
         sugeRender(v);
 
         if (v.length === 10) {
-          // Full 10-digit account — run real NUBAN algorithm to get matching banks
+          // Full 10-digit account — suggest the most likely banks without auto-selecting
           const suggestions = detectBanksFromAcct(v);
-          if (suggestions.length === 1) {
-            // Exactly one match — auto-select it
-            selBank = suggestions[0];
-            showAutoDetectedBank(suggestions[0]);
-            showManualBankRow(false);
-            hideBankSuggestions();
-            // Start name verification
-            spinner.style.display = 'block';
-            clearBtn.style.display = 'none';
-            vTimer = setTimeout(() => doVerify(v), 700);
-          } else if (suggestions.length > 1) {
-            // Multiple possible banks — show the OPay-style suggestion strip
-            selBank = suggestions[0]; // pre-select the top match
-            showAutoDetectedBank(suggestions[0]);
-            showManualBankRow(false);
+          if (suggestions.length > 0) {
+            selBank = null;
+            showManualBankRow(true);
             showBankSuggestions(suggestions, v);
           } else {
             // No NUBAN match — let user pick manually
@@ -9722,13 +9710,15 @@
         if (!el) {
           el = document.createElement('div');
           el.id = 'bank-suggestions';
-          el.style.cssText = 'margin:10px 0 0;padding:10px 12px;background:#F0FDF9;border-radius:14px;border:1.5px solid var(--gl)';
-          const acctCard = document.getElementById('acct-card');
-          acctCard.parentNode.insertBefore(el, acctCard.nextSibling);
+          el.style.cssText = 'margin:10px 16px 0;padding:10px 12px;background:#F0FDF9;border-radius:14px;border:1.5px solid var(--gl)';
+          const card = document.querySelector('.recip-card-white');
+          if (card) card.parentNode.insertBefore(el, card.nextSibling);
+          else document.getElementById('s-transfer').appendChild(el);
         }
+        const topMatch = banks[0];
         el.innerHTML = `
     <div style="font-size:11.5px;color:var(--g);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:5px">
-      <i class="ti ti-sparkles" style="font-size:13px"></i> Possible banks for this account
+      <i class="ti ti-sparkles" style="font-size:13px"></i> Suggested bank${banks.length > 1 ? 's' : ''} for this account
     </div>
     <div style="display:flex;gap:8px;flex-wrap:wrap">
       ${banks.map((b, i) => {
@@ -9741,7 +9731,8 @@
           ${logo}${b.n}
         </button>`;
         }).join('')}
-    </div>`;
+    </div>
+    ${topMatch ? `<div style="margin-top:8px;font-size:11px;color:var(--b4)">The top suggestion is the most likely match for this account number.</div>` : ''}`;
         el.style.display = 'block';
       }
 
@@ -9753,7 +9744,6 @@
       function selectSuggestedBank(code, name, acct) {
         const bank = BANKS.find(b => b.code === code && b.n === name) || BANKS.find(b => b.n === name) || { n: name, code, c: '#9CA3AF', t: '#fff' };
         selBank = { ...bank };
-        // Visually update the chips
         document.querySelectorAll('.nuban-sug-chip').forEach(chip => {
           const isMe = chip.getAttribute('data-code') === code && chip.getAttribute('data-name') === name;
           chip.style.borderColor = isMe ? 'var(--g)' : 'var(--b6)';
@@ -9762,8 +9752,8 @@
           chip.style.color = isMe ? 'var(--g)' : 'var(--b)';
           chip.classList.toggle('selected', isMe);
         });
+        hideBankSuggestions();
         showAutoDetectedBank(selBank);
-        // Kick off verification with the newly selected bank
         clearTimeout(vTimer);
         resetVerifyUI();
         const spinner = document.getElementById('acct-detect-spinner');
@@ -10355,22 +10345,29 @@
       /* Logos are self-contained inline SVG data URIs (no external network
          request) so they always render, regardless of hotlink/CORS issues
          with third-party image hosts. */
+      function makeCarrierLogo(label, bg, fg, accent) {
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 40 40">
+          <rect x="1" y="1" width="38" height="38" rx="10" fill="${bg}" stroke="${accent}" stroke-width="1.5"/>
+          <text x="20" y="24" font-family="Arial,Helvetica,sans-serif" font-size="10" font-weight="800" fill="${fg}" text-anchor="middle">${label}</text>
+        </svg>`;
+        return 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(svg);
+      }
       const NETWORKS = [
         {
           n: 'MTN', c: '#FFCB05', t: '#1A1A2E',
-          logo: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><rect width='40' height='40' rx='10' fill='%23FFCB05'/><text x='20' y='25' font-family='Arial,Helvetica,sans-serif' font-size='12' font-weight='800' fill='%231A1A2E' text-anchor='middle'>MTN</text></svg>"
+          logo: makeCarrierLogo('MTN', '#FFCB05', '#1A1A2E', '#1A1A2E')
         },
         {
           n: 'Airtel', c: '#ED1C24', t: '#fff',
-          logo: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='20' r='20' fill='%23ED1C24'/><text x='20' y='24' font-family='Arial,Helvetica,sans-serif' font-size='10' font-weight='800' font-style='italic' fill='%23fff' text-anchor='middle'>airtel</text></svg>"
+          logo: makeCarrierLogo('AIRTEL', '#ED1C24', '#fff', '#B91C1C')
         },
         {
           n: 'Glo', c: '#007A1E', t: '#fff',
-          logo: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='20' r='20' fill='%23007A1E'/><text x='20' y='25' font-family='Arial,Helvetica,sans-serif' font-size='13' font-weight='800' fill='%23fff' text-anchor='middle'>glo</text></svg>"
+          logo: makeCarrierLogo('GLO', '#007A1E', '#fff', '#065F46')
         },
         {
           n: '9mobile', c: '#007B5E', t: '#fff',
-          logo: "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'><circle cx='20' cy='20' r='20' fill='%23007B5E'/><text x='20' y='23' font-family='Arial,Helvetica,sans-serif' font-size='9' font-weight='800' fill='%23fff' text-anchor='middle'>9mobile</text></svg>"
+          logo: makeCarrierLogo('9M', '#007B5E', '#fff', '#0F766E')
         },
       ];
       let atNet = null, dtNet = null, dtPlan = null, dtCat = 'daily';
@@ -10431,13 +10428,18 @@
         },
       };
 
+      function buildNetworkLogoMarkup(network, size = 40, radius = '50%') {
+        const sizePx = `${size}px`;
+        const fallback = `<span style="width:${sizePx};height:${sizePx};border-radius:${radius};display:flex;align-items:center;justify-content:center;background:${network.c};color:${network.t};font-size:${Math.max(8, Math.round(size * 0.28))}px;font-weight:800">${network.n.slice(0, 3).toUpperCase()}</span>`;
+        if (!network.logo) return fallback;
+        return `<img src="${network.logo}" alt="${network.n}" loading="lazy" style="width:${sizePx};height:${sizePx};border-radius:${radius};object-fit:contain;display:block;background:${network.c}" onerror="this.outerHTML='${fallback.replace(/'/g, "\\'")}';">`;
+      }
+
       function buildNetGrid(elId, sel) {
         const fn = elId === 'at-network-grid' ? 'pickAtNet' : 'pickDtNet';
         document.getElementById(elId).innerHTML = NETWORKS.map((nw, i) => {
           const on = sel === i ? ' on' : '';
-          const ini = nw.n.slice(0, 3).toUpperCase();
-          // Fallback HTML must have no inner quotes — use single-quoted style attr
-          const fb = `<div style='width:40px;height:40px;border-radius:50%;background:${nw.c};color:${nw.t};display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800'>${ini}</div>`;
+          // const logoHtml = buildNetworkLogoMarkup(nw, 40, '50%');
           const logoHtml = nw.logo
             ? `<img src="${nw.logo}" alt="${nw.n}" loading="lazy"
           style="width:40px;height:40px;border-radius:50%;object-fit:contain;background:transparent;display:block"
@@ -10475,9 +10477,9 @@
         const carrier = NETWORKS.find(n => n.n === prefixField);
         if (!carrier) { logo.style.display = 'none'; label.style.display = 'none'; return; }
         logo.style.display = 'flex';
-        logo.style.background = carrier.c;
-        logo.style.color = carrier.t;
-        logo.textContent = carrier.n.slice(0, 3).toUpperCase();
+        logo.style.background = 'transparent';
+        logo.style.padding = '0';
+        logo.innerHTML = buildNetworkLogoMarkup(carrier, 26, '8px');
         label.style.display = 'flex';
         label.innerHTML = `<i class="ti ti-circle-check-filled"></i>${carrier.n} detected`;
       }
@@ -10691,11 +10693,37 @@
 
       /* ===== AVATAR / PROFILE PHOTO ===== */
       let userAvatarDataUrl = null; // stores uploaded image as data URL
+      const PROFILE_NAME_KEY = 'opay_profile_name';
       let USER_NAME = 'Chukwuemeka Obi';
       let USER_ACCT = '0123456789';
       function getInitials(name) { return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
       let USER_INITIALS = getInitials(USER_NAME);
       const USER_BG = 'rgba(255,255,255,.25)';
+
+      function loadProfileFromStorage() {
+        try {
+          const savedName = localStorage.getItem(PROFILE_NAME_KEY);
+          if (savedName && savedName.trim()) {
+            USER_NAME = savedName.trim();
+          }
+        } catch (e) {
+          console.warn('Could not load profile name from storage.', e);
+        }
+      }
+
+      function saveProfileName(name) {
+        const cleaned = (name || '').trim();
+        if (!cleaned) return;
+        try {
+          localStorage.setItem(PROFILE_NAME_KEY, cleaned);
+        } catch (e) {
+          console.warn('Could not save profile name to storage.', e);
+        }
+      }
+
+      loadProfileFromStorage();
+      USER_INITIALS = getInitials(USER_NAME);
+      updateAllAvatars();
 
       function openAvatarPicker() {
         document.getElementById('avatar-file-inp').click();
@@ -10819,6 +10847,7 @@
         USER_NAME = newName;
         if (newAcct) USER_ACCT = newAcct;
 
+        saveProfileName(USER_NAME);
         updateAllAvatars();       // updates greeting, profile name, account number, avatars
         closeEditProfile();
         showToast('Profile updated ✓');
