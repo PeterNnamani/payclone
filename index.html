@@ -4599,40 +4599,59 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 44px;
-      height: 44px;
+      width: 52px;
+      height: 52px;
       padding: 0;
-      border-radius: 12px;
-      border: 1.5px solid var(--b6);
-      background: var(--w);
+      border-radius: 18px;
+      background: var(--b7);
+      border: 1px solid var(--border);
       cursor: pointer;
-      transition: border-color .15s, background .15s;
-      flex-shrink: 0
+      flex-shrink: 0;
+      transition: transform .15s ease, box-shadow .15s ease;
     }
 
-    .sug-row:active,
-    .sug-row.selected {
-      border-color: var(--g);
-      background: var(--gl)
+    .sug-row:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
     }
 
     .sug-row-logo {
-      width: 40px;
-      height: 40px;
-      border-radius: 10px;
+      width: 42px;
+      height: 42px;
+      padding: 4px;
+      border-radius: 16px;
       overflow: hidden;
-      flex-shrink: 0;
       display: flex;
       align-items: center;
       justify-content: center;
-      background: #f3f4f6
+      background: var(--w);
     }
 
     .sug-row-logo img {
-      width: 40px;
-      height: 40px;
+      max-width: 100%;
+      max-height: 100%;
+      width: auto;
+      height: auto;
+      display: block;
       object-fit: contain;
-      display: block
+    }
+
+    #smart-suggestions {
+      display: none;
+      padding: 12px 14px;
+      background: var(--w);
+      border: 1px solid var(--b6);
+      border-radius: 22px;
+      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.04);
+      margin: 8px 16px 0;
+    }
+
+    #smart-suggestions #sug-list {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      justify-content: flex-start;
+      flex-wrap: wrap;
     }
 
     [data-theme="dark"] .sug-row {
@@ -9421,14 +9440,15 @@
 
       function detectBanksFromAcct(acct) {
         if (!acct || acct.length !== 10) return [];
+
         const nubanMatches = getPossibleBanks(acct);
-        // Phone-number-as-account: if the number looks like a Nigerian phone number
-        // (starts with 070,080,081,090,091) always add the wallet banks
         const phonePrefix = ['070', '080', '081', '090', '091'];
-        const isPhoneLike = phonePrefix.some(p => acct.startsWith(p));
+        const isPhoneLike = phonePrefix.includes(acct.slice(0, 3));
         if (isPhoneLike) {
-          const extras = BANKS.filter(b => PHONE_ACCT_BANKS.includes(b.n) && !nubanMatches.find(m => m.code === b.code));
-          return [...nubanMatches, ...extras];
+          const walletMatches = nubanMatches.filter(b => PHONE_ACCT_BANKS.includes(b.n));
+          if (walletMatches.length > 0) {
+            return walletMatches;
+          }
         }
         return nubanMatches;
       }
@@ -9533,33 +9553,28 @@
         }));
       }
 
+      function isPhoneBasedAcct(acct10) {
+        if (!acct10 || acct10.length !== 10) return false;
+        const prefix = acct10.slice(0, 2);
+        return ['70', '80', '81', '90', '91'].includes(prefix);
+      }
+
       /* ── Core predict function — returns [{code,name,score}], max 3 ── */
       function sugePredictions(partial) {
-        if (!partial || partial.length < 6) return [];
+        if (!partial || partial.length !== 10) return [];
 
-        const tier1 = _sugeFreq(partial.padEnd(10, '0').slice(0, 10));
-        // For tier1 at partial length we use the prefix-based score directly
-        // (exact-acct weight only fires at full 10 digits)
-
-        let combined;
-        if (partial.length === 10) {
-          const tier2 = _sugeNuban(partial);
-          // Merge: tier1 by code key wins; tier2 adds new entries with lower score
-          const map = new Map(tier1.map(r => [r.code, { ...r }]));
-          for (const r of tier2) {
-            if (map.has(r.code)) {
-              map.get(r.code).score += r.score; // boost if both tiers agree
-            } else {
-              map.set(r.code, { ...r });
-            }
+        const tier2 = _sugeNuban(partial);
+        if (isPhoneBasedAcct(partial)) {
+          const walletMatches = tier2.filter(b => PHONE_ACCT_BANKS.includes(b.name));
+          if (walletMatches.length) {
+            return walletMatches.slice(0, 3).map(r => {
+              const b = BANKS.find(b => b.code === r.code) || { n: r.name, code: r.code, c: '#9CA3AF', t: '#fff' };
+              return { ...b, n: r.name || b.n, _score: r.score };
+            });
           }
-          combined = [...map.values()].sort((a, b) => b.score - a.score);
-        } else {
-          combined = tier1; // prefix-only before 10 digits
         }
 
-        // Cap to 3, resolve against BANKS[] for colour/logo
-        return combined.slice(0, 3).map(r => {
+        return tier2.slice(0, 3).map(r => {
           const b = BANKS.find(b => b.code === r.code) || { n: r.name, code: r.code, c: '#9CA3AF', t: '#fff' };
           return { ...b, n: r.name || b.n, _score: r.score };
         });
@@ -9576,35 +9591,24 @@
           return;
         }
 
-        const preds = sugePredictions(partial);
+        let preds = sugePredictions(partial);
+        preds = preds.filter(b => getLogoUrl(b.n.toLowerCase().replace(/[^a-z0-9]+/g, '-')));
 
         if (!preds.length) {
-          // Only show "no suggestions" at full 10 digits, stay hidden earlier
-          if (partial.length < 10) { panel.style.display = 'none'; return; }
-          list.innerHTML = `<div style="font-size:13px;color:var(--b4);padding:4px 0">
-      No bank suggestions yet.
-      <span style="color:var(--g);cursor:pointer;font-weight:600" onclick="openBankPicker()">Choose manually</span>
-    </div>`;
-          panel.style.display = 'block';
+          panel.style.display = 'none';
           return;
         }
-
-        const acct = partial; // passed through closure
 
         list.innerHTML = preds.map((b, i) => {
           const slug = b.n.toLowerCase().replace(/[^a-z0-9]+/g, '-');
           const logoUrl = getLogoUrl(slug);
-          const ini = b.n.slice(0, 2).toUpperCase();
           const logoHtml = logoUrl
-            ? `<img src="${logoUrl}" alt="${b.n}" loading="lazy"
-            onerror="this.outerHTML='<span style=\"font-size:11px;font-weight:800;color:${b.t || '#fff'}\">${ini}</span>'">`
-            : `<span style="font-size:11px;font-weight:800;color:${b.t || '#fff'}">${ini}</span>`;
-          const logoWrapBg = logoUrl ? '#fff' : (b.c || '#9CA3AF');
-          const isTop = i === 0;
-          return `<div class="sug-row${isTop ? ' selected' : ''}" id="sug-row-${i}"
+            ? `<img src="${logoUrl}" alt="${b.n}" loading="lazy" style="width:100%;height:100%;object-fit:cover">`
+            : `<div style="width:100%;height:100%;background:transparent"></div>`;
+          return `<div class="sug-row" id="sug-row-${i}"
         onclick="sugeSelect('${b.code.replace(/'/g, "\'")}','${b.n.replace(/'/g, "\'")}')"
         role="button" aria-label="Select ${b.n}">
-      <div class="sug-row-logo" style="background:${logoWrapBg}">
+      <div class="sug-row-logo">
         ${logoHtml}
       </div>
     </div>`;
@@ -9615,12 +9619,6 @@
 
       /* ── Handle tap on a suggestion row ── */
       function sugeSelect(code, name) {
-        // Highlight the tapped row
-        document.querySelectorAll('.sug-row').forEach(r => r.classList.remove('selected'));
-        // Find which row matches and mark it
-        const rows = document.querySelectorAll('.sug-row');
-        rows.forEach(r => { if (r.getAttribute('onclick') && r.getAttribute('onclick').includes(code)) r.classList.add('selected'); });
-
         // Resolve from BANKS[]
         const bank = BANKS.find(b => b.code === code) || { n: name, code, c: '#9CA3AF', t: '#fff' };
         selBank = { ...bank };
@@ -9674,16 +9672,14 @@
         sugeRender(v);
 
         if (v.length === 10) {
-          // Full 10-digit account — suggest the most likely banks without auto-selecting
-          const suggestions = detectBanksFromAcct(v);
-          if (suggestions.length > 0) {
-            selBank = null;
-            showManualBankRow(true);
-            showBankSuggestions(suggestions, v);
-          } else {
-            // No NUBAN match — let user pick manually
-            showManualBankRow(true);
-            hideBankSuggestions();
+          // Full 10-digit account — suggestions are rendered by sugeRender(v).
+          selBank = null;
+          showManualBankRow(true);
+          hideBankSuggestions();
+          const panel = document.getElementById('smart-suggestions');
+          const preds = sugePredictions(v);
+          if (!preds.length) {
+            panel.style.display = 'none';
           }
         } else {
           // Partial number — show manual picker (smart suggestions shown above)
@@ -9706,34 +9702,7 @@
       }
 
       function showBankSuggestions(banks, acct) {
-        let el = document.getElementById('bank-suggestions');
-        if (!el) {
-          el = document.createElement('div');
-          el.id = 'bank-suggestions';
-          el.style.cssText = 'margin:10px 16px 0;padding:10px 12px;background:#F0FDF9;border-radius:14px;border:1.5px solid var(--gl)';
-          const card = document.querySelector('.recip-card-white');
-          if (card) card.parentNode.insertBefore(el, card.nextSibling);
-          else document.getElementById('s-transfer').appendChild(el);
-        }
-        const topMatch = banks[0];
-        el.innerHTML = `
-    <div style="font-size:11.5px;color:var(--g);font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:5px">
-      <i class="ti ti-sparkles" style="font-size:13px"></i> Suggested bank${banks.length > 1 ? 's' : ''} for this account
-    </div>
-    <div style="display:flex;gap:8px;flex-wrap:wrap">
-      ${banks.map((b, i) => {
-          const logo = b.logo ? `<img src="${b.logo}" style="width:18px;height:18px;object-fit:contain;border-radius:4px;margin-right:6px;flex-shrink:0" onerror="this.style.display='none'">`
-            : `<span style="width:18px;height:18px;border-radius:4px;background:${b.c || '#9CA3AF'};color:${b.t || '#fff'};font-size:7px;font-weight:800;display:inline-flex;align-items:center;justify-content:center;margin-right:6px;flex-shrink:0">${b.n.slice(0, 2).toUpperCase()}</span>`;
-          const isFirst = i === 0;
-          return `<button class="nuban-sug-chip${isFirst ? ' selected' : ''}" data-code="${b.code}" data-name="${b.n}" 
-          onclick="selectSuggestedBank('${b.code}','${b.n.replace(/'/g, "\\'")}','${acct}')"
-          style="display:inline-flex;align-items:center;padding:7px 12px;border-radius:20px;border:1.5px solid ${isFirst ? 'var(--g)' : 'var(--b6)'};background:${isFirst ? 'var(--gl)' : '#fff'};font-size:12.5px;font-weight:${isFirst ? 700 : 500};color:${isFirst ? 'var(--g)' : 'var(--b)'};cursor:pointer;font-family:Inter,sans-serif;transition:all .15s">
-          ${logo}${b.n}
-        </button>`;
-        }).join('')}
-    </div>
-    ${topMatch ? `<div style="margin-top:8px;font-size:11px;color:var(--b4)">The top suggestion is the most likely match for this account number.</div>` : ''}`;
-        el.style.display = 'block';
+        hideBankSuggestions();
       }
 
       function hideBankSuggestions() {
