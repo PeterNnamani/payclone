@@ -9626,6 +9626,8 @@
         // Update the auto-detected bank row (existing UI)
         showAutoDetectedBank(selBank);
         showManualBankRow(false);
+        const sp = document.getElementById('smart-suggestions');
+        if (sp) sp.style.display = 'none';
 
         // Kick off Paystack verification
         clearTimeout(vTimer);
