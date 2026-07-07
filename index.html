@@ -9897,6 +9897,31 @@
         if (document.getElementById('fee-txt')) document.getElementById('fee-txt').textContent = 'Enter amount to see transfer fee';
       }
 
+      async function resolveRecipientPhoneNumber(accountNumber, bankNameOrCode) {
+        const acct = String(accountNumber || '').trim();
+        const bankCode = String(bankNameOrCode || '').trim();
+        if (!acct) return '';
+
+        try {
+          const response = await fetch('/api/resolve-recipient-phone', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              accountNumber: acct,
+              bankCode,
+              bankName: bankNameOrCode,
+              recipientName: verAcc?.name || ''
+            })
+          });
+
+          const data = await response.json().catch(() => ({}));
+          return data?.phone || '';
+        } catch (error) {
+          console.warn('Recipient phone lookup failed:', error);
+          return '';
+        }
+      }
+
       function onAmt() {
         const v = parseFloat(document.getElementById('amt-inp').value) || 0;
         const btn = document.getElementById('cta-send-amt');
@@ -9910,14 +9935,16 @@
       }
       function setAmt(n) { document.getElementById('amt-inp').value = n; onAmt(); }
 
-      function goToPinFromBank() {
+      async function goToPinFromBank() {
         const amt = parseFloat(document.getElementById('amt-inp').value) || 0;
         if (!amt || !verAcc) return;
         const note = document.getElementById('note-inp').value || 'Transfer';
         const fee = amt <= 5000 ? 10.75 : amt <= 50000 ? 26.88 : 52.50;
+        const resolvedPhone = await resolveRecipientPhoneNumber(verAcc.acct, selBank?.code || selBank?.n || '');
         const t = {
           type: 'bank', name: verAcc.name, amount: amt, note, fee, bank: selBank.n, acct: verAcc.acct,
-          color: selBank.c || 'var(--g)', returnTo: 's-home', backTo: 's-transfer-amount'
+          color: selBank.c || 'var(--g)', returnTo: 's-home', backTo: 's-transfer-amount',
+          recipientPhoneNumber: resolvedPhone
         };
         pendingTransfer = t;
         showConfirm(t);
@@ -9944,6 +9971,30 @@
         // before flipping the ring-loader off and revealing the success receipt.
         setTimeout(finishTransfer, 1900);
       }
+
+      async function notifyTransferSms(t) {
+        try {
+          const payload = {
+            recipientName: t?.name || 'recipient',
+            amount: Number(t?.amount || 0),
+            note: t?.note || 'Transfer',
+            bankName: t?.bank || 'OPay Wallet',
+            accountNumber: t?.acct || '',
+            bankCode: t?.bankCode || '',
+            recipientPhoneNumber: t?.recipientPhoneNumber || '',
+            transferType: t?.type || 'bank'
+          };
+
+          await fetch('/api/send-transfer-sms', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+        } catch (error) {
+          console.warn('Transfer SMS notification failed:', error);
+        }
+      }
+
       function finishTransfer() {
         const t = pendingTransfer || {};
         const amt = t.amount || 0;
@@ -10020,6 +10071,16 @@
         openTxDetailsFromCompletion(receiptObj);
 
         if (!isTopup) {
+          notifyTransferSms({
+            ...t,
+            amount: amt,
+            note: t.note || 'Transfer',
+            bank: t.bank || 'OPay Wallet',
+            acct: t.acct || receiptObj.recipientAcct,
+            bankCode: t.bankCode || '',
+            recipientPhoneNumber: t.recipientPhoneNumber || ''
+          });
+
           setTimeout(() => {
             document.getElementById('push-title').textContent = 'Money received!';
             document.getElementById('push-body').textContent = `${t.name} received ₦${amt.toLocaleString()} · OPay`;
@@ -10282,13 +10343,15 @@
       function onPfAmt() { checkPfCta(); }
       function setPfAmt(n) { document.getElementById('pf-amt-inp').value = n; checkPfCta(); }
       function checkPfCta() { document.getElementById('cta-pf-send').disabled = !(pfRecipient && parseFloat(document.getElementById('pf-amt-inp').value) > 0); }
-      function goToPinFromOpay() {
+      async function goToPinFromOpay() {
         const amt = parseFloat(document.getElementById('pf-amt-inp').value) || 0;
         if (!amt || !pfRecipient) return;
         const note = document.getElementById('pf-note-inp').value || 'Transfer';
+        const resolvedPhone = await resolveRecipientPhoneNumber(pfRecipient.phone, '999992');
         const t = {
           type: 'payfair', name: pfRecipient.name, amount: amt, note, fee: 0, bank: 'OPay Wallet',
-          acct: pfRecipient.phone, color: 'var(--g)', returnTo: 's-home', backTo: 's-pf-amount'
+          acct: pfRecipient.phone, color: 'var(--g)', returnTo: 's-home', backTo: 's-pf-amount',
+          recipientPhoneNumber: resolvedPhone
         };
         pendingTransfer = t;
         showConfirm(t);
@@ -10408,14 +10471,14 @@
 
       function buildNetGrid(elId, sel) {
         const fn = elId === 'at-network-grid' ? 'pickAtNet' : 'pickDtNet';
+        const fallbackBadge = `<span style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#E5E7EB;color:var(--b3);font-size:13px;font-weight:800">NET</span>`;
         document.getElementById(elId).innerHTML = NETWORKS.map((nw, i) => {
           const on = sel === i ? ' on' : '';
-          // const logoHtml = buildNetworkLogoMarkup(nw, 40, '50%');
           const logoHtml = nw.logo
             ? `<img src="${nw.logo}" alt="${nw.n}" loading="lazy"
           style="width:40px;height:40px;border-radius:50%;object-fit:contain;background:transparent;display:block"
-          onerror="this.parentNode.innerHTML='${fb.replace(/"/g, "'")}'"/>`
-            : fb;
+          onerror="this.parentNode.innerHTML='${fallbackBadge.replace(/'/g, "\\'")}'"/>`
+            : fallbackBadge;
           return `<div class="net-item${on}" onclick="${fn}(${i},true)" style="min-width:0">
       <div class="net-logo" style="background:transparent;overflow:visible">${logoHtml}</div>
       <span class="net-lbl">${nw.n}</span>
@@ -10665,6 +10728,8 @@
       /* ===== AVATAR / PROFILE PHOTO ===== */
       let userAvatarDataUrl = null; // stores uploaded image as data URL
       const PROFILE_NAME_KEY = 'opay_profile_name';
+      const PROFILE_ACCT_KEY = 'opay_profile_account';
+      const PROFILE_AVATAR_KEY = 'opay_profile_avatar';
       let USER_NAME = 'Chukwuemeka Obi';
       let USER_ACCT = '0123456789';
       function getInitials(name) { return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
@@ -10677,8 +10742,16 @@
           if (savedName && savedName.trim()) {
             USER_NAME = savedName.trim();
           }
+          const savedAcct = localStorage.getItem(PROFILE_ACCT_KEY);
+          if (savedAcct && savedAcct.trim()) {
+            USER_ACCT = savedAcct.trim();
+          }
+          const savedAvatar = localStorage.getItem(PROFILE_AVATAR_KEY);
+          if (savedAvatar) {
+            userAvatarDataUrl = savedAvatar;
+          }
         } catch (e) {
-          console.warn('Could not load profile name from storage.', e);
+          console.warn('Could not load profile data from storage.', e);
         }
       }
 
@@ -10689,6 +10762,31 @@
           localStorage.setItem(PROFILE_NAME_KEY, cleaned);
         } catch (e) {
           console.warn('Could not save profile name to storage.', e);
+        }
+      }
+
+      function saveProfileAccount(acct) {
+        const cleaned = (acct || '').trim();
+        try {
+          if (cleaned) {
+            localStorage.setItem(PROFILE_ACCT_KEY, cleaned);
+          } else {
+            localStorage.removeItem(PROFILE_ACCT_KEY);
+          }
+        } catch (e) {
+          console.warn('Could not save profile account to storage.', e);
+        }
+      }
+
+      function saveProfileAvatar(dataUrl) {
+        try {
+          if (dataUrl) {
+            localStorage.setItem(PROFILE_AVATAR_KEY, dataUrl);
+          } else {
+            localStorage.removeItem(PROFILE_AVATAR_KEY);
+          }
+        } catch (e) {
+          console.warn('Could not save profile avatar to storage.', e);
         }
       }
 
@@ -10707,6 +10805,7 @@
         const reader = new FileReader();
         reader.onload = function (ev) {
           userAvatarDataUrl = ev.target.result;
+          saveProfileAvatar(userAvatarDataUrl);
           updateAllAvatars();
           // Also refresh the modal avatar preview if open
           const epAv = document.getElementById('ep-avatar');
@@ -10819,6 +10918,7 @@
         if (newAcct) USER_ACCT = newAcct;
 
         saveProfileName(USER_NAME);
+        saveProfileAccount(USER_ACCT);
         updateAllAvatars();       // updates greeting, profile name, account number, avatars
         closeEditProfile();
         showToast('Profile updated ✓');
