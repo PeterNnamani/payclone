@@ -10471,14 +10471,14 @@
 
       function buildNetGrid(elId, sel) {
         const fn = elId === 'at-network-grid' ? 'pickAtNet' : 'pickDtNet';
-        const fallbackBadge = `<span style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#E5E7EB;color:var(--b3);font-size:13px;font-weight:800">NET</span>`;
         document.getElementById(elId).innerHTML = NETWORKS.map((nw, i) => {
           const on = sel === i ? ' on' : '';
+          // const logoHtml = buildNetworkLogoMarkup(nw, 40, '50%');
           const logoHtml = nw.logo
             ? `<img src="${nw.logo}" alt="${nw.n}" loading="lazy"
           style="width:40px;height:40px;border-radius:50%;object-fit:contain;background:transparent;display:block"
-          onerror="this.parentNode.innerHTML='${fallbackBadge.replace(/'/g, "\\'")}'"/>`
-            : fallbackBadge;
+          onerror="this.parentNode.innerHTML='${fb.replace(/"/g, "'")}'"/>`
+            : fb;
           return `<div class="net-item${on}" onclick="${fn}(${i},true)" style="min-width:0">
       <div class="net-logo" style="background:transparent;overflow:visible">${logoHtml}</div>
       <span class="net-lbl">${nw.n}</span>
@@ -10728,8 +10728,6 @@
       /* ===== AVATAR / PROFILE PHOTO ===== */
       let userAvatarDataUrl = null; // stores uploaded image as data URL
       const PROFILE_NAME_KEY = 'opay_profile_name';
-      const PROFILE_ACCT_KEY = 'opay_profile_account';
-      const PROFILE_AVATAR_KEY = 'opay_profile_avatar';
       let USER_NAME = 'Chukwuemeka Obi';
       let USER_ACCT = '0123456789';
       function getInitials(name) { return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
@@ -10742,16 +10740,8 @@
           if (savedName && savedName.trim()) {
             USER_NAME = savedName.trim();
           }
-          const savedAcct = localStorage.getItem(PROFILE_ACCT_KEY);
-          if (savedAcct && savedAcct.trim()) {
-            USER_ACCT = savedAcct.trim();
-          }
-          const savedAvatar = localStorage.getItem(PROFILE_AVATAR_KEY);
-          if (savedAvatar) {
-            userAvatarDataUrl = savedAvatar;
-          }
         } catch (e) {
-          console.warn('Could not load profile data from storage.', e);
+          console.warn('Could not load profile name from storage.', e);
         }
       }
 
@@ -10762,31 +10752,6 @@
           localStorage.setItem(PROFILE_NAME_KEY, cleaned);
         } catch (e) {
           console.warn('Could not save profile name to storage.', e);
-        }
-      }
-
-      function saveProfileAccount(acct) {
-        const cleaned = (acct || '').trim();
-        try {
-          if (cleaned) {
-            localStorage.setItem(PROFILE_ACCT_KEY, cleaned);
-          } else {
-            localStorage.removeItem(PROFILE_ACCT_KEY);
-          }
-        } catch (e) {
-          console.warn('Could not save profile account to storage.', e);
-        }
-      }
-
-      function saveProfileAvatar(dataUrl) {
-        try {
-          if (dataUrl) {
-            localStorage.setItem(PROFILE_AVATAR_KEY, dataUrl);
-          } else {
-            localStorage.removeItem(PROFILE_AVATAR_KEY);
-          }
-        } catch (e) {
-          console.warn('Could not save profile avatar to storage.', e);
         }
       }
 
@@ -10805,7 +10770,6 @@
         const reader = new FileReader();
         reader.onload = function (ev) {
           userAvatarDataUrl = ev.target.result;
-          saveProfileAvatar(userAvatarDataUrl);
           updateAllAvatars();
           // Also refresh the modal avatar preview if open
           const epAv = document.getElementById('ep-avatar');
@@ -10918,7 +10882,6 @@
         if (newAcct) USER_ACCT = newAcct;
 
         saveProfileName(USER_NAME);
-        saveProfileAccount(USER_ACCT);
         updateAllAvatars();       // updates greeting, profile name, account number, avatars
         closeEditProfile();
         showToast('Profile updated ✓');
