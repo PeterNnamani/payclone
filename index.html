@@ -8351,8 +8351,8 @@
         const canvas = document.getElementById('receipt-canvas');
         const isBill = lastReceipt.type === 'BILL PAYMENT';
         const render = () => {
-          if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, 127, 1080); }
-          else { drawOpayReceipt(canvas, lastReceipt, 127, 1080); }
+          if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, 380, 680); }
+          else { drawOpayReceipt(canvas, lastReceipt, 380, 680); }
           const img = document.getElementById('receipt-preview-img');
           img.src = canvas.toDataURL('image/png');
           document.getElementById('receipt-preview-overlay').classList.add('show');
