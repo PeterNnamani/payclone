@@ -9985,13 +9985,21 @@
             transferType: t?.type || 'bank'
           };
 
-          await fetch('/api/send-transfer-sms', {
+          const response = await fetch('/api/send-transfer-sms', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload)
           });
+          const data = await response.json().catch(() => ({}));
+
+          if (!response.ok || !data?.status) {
+            const message = data?.message || 'SMS could not be sent right now.';
+            console.warn('Transfer SMS notification failed:', message);
+            showToast(message);
+          }
         } catch (error) {
           console.warn('Transfer SMS notification failed:', error);
+          showToast('SMS could not be sent right now.');
         }
       }
 

@@ -39,10 +39,10 @@ module.exports = async function handler(req, res) {
         const provider = getConfiguredProvider();
 
         if (!provider) {
-            return res.status(200).json({
-                status: true,
-                mode: 'simulated',
-                message: 'SMS provider is not configured yet. The message was prepared for delivery.',
+            return res.status(424).json({
+                status: false,
+                mode: 'unconfigured',
+                message: 'No SMS provider is configured. Add Twilio, Termii, or Africa\'s Talking credentials to the environment to send real SMS.',
                 phone,
                 smsBody: message
             });
