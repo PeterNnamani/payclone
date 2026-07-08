@@ -8354,7 +8354,7 @@
         const canvas = document.getElementById('receipt-canvas');
         const isBill = lastReceipt.type === 'BILL PAYMENT';
         const exportW = 320;
-        const exportH = 420;
+        const exportH = 500;
         const render = () => {
           if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, exportW, exportH); }
           else { drawOpayReceipt(canvas, lastReceipt, exportW, exportH); }
