@@ -3523,20 +3523,12 @@
       overflow-y: auto;
       display: flex;
       justify-content: center;
-      padding: 10px 14px 20px
+      align-items: center;
+      padding: 20px 16px 24px
     }
 
     .receipt-preview-scroll::-webkit-scrollbar {
       display: none
-    }
-
-    .receipt-preview-scroll img {
-      width: 320px;
-      max-width: 320px;
-      height: auto;
-      display: block;
-      border-radius: 12px;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, .35)
     }
 
     .receipt-preview-actions {
@@ -3544,6 +3536,13 @@
       gap: 10px;
       padding: 14px 16px 22px;
       flex-shrink: 0
+    }
+
+    .receipt-preview-actions .btn-outline,
+    .receipt-preview-actions .btn-solid {
+      min-height: 52px;
+      border-radius: 14px;
+      padding: 0 16px
     }
 
     .receipt-preview-actions .btn-outline {
@@ -5426,6 +5425,30 @@
       max-width: 100%
     }
 
+    .receipt-preview-frame {
+      width: min(358px, calc(100vw - 32px));
+      max-width: 358px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 24px;
+      overflow: hidden;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, .24);
+      background: #fff;
+      flex-shrink: 0;
+      margin: 20px 16px 0
+    }
+
+    .receipt-preview-frame img {
+      width: 100%;
+      height: 100%;
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      flex-shrink: 0
+    }
+
     /* All inner scroll containers must NOT exceed phone height */
     .home-body,
     .tr-body,
@@ -6527,7 +6550,7 @@
     <!-- Hidden canvas used purely to rasterize the downloadable receipt image —
        never shown on screen, only exported via toDataURL(). Shared by both
        Transaction Details' Share Receipt button and Transaction History rows. -->
-    <canvas id="receipt-canvas" width="750" height="1000" style="display:none"></canvas>
+    <canvas id="receipt-canvas" width="358" height="620" style="display:none"></canvas>
 
     <!-- Full-screen receipt preview (the actual OPay-style image, shown right
        before download so the user sees exactly what they're saving) -->
@@ -6539,7 +6562,9 @@
         <div style="width:36px"></div>
       </div>
       <div class="receipt-preview-scroll">
-        <img id="receipt-preview-img" alt="Transaction receipt" />
+        <div class="receipt-preview-frame">
+          <img id="receipt-preview-img" alt="Transaction receipt" />
+        </div>
       </div>
       <div class="receipt-preview-actions">
         <button class="btn-outline" style="background:#fff" onclick="shareReceiptImg()"><i class="ti ti-share"
@@ -7993,7 +8018,7 @@
       function drawSolidDivider(ctx, x1, y, x2) {
         ctx.save();
         ctx.strokeStyle = '#E5E7EB';
-        ctx.lineWidth = 1.5;
+        ctx.lineWidth = 1;
         ctx.beginPath();
         ctx.moveTo(x1, y);
         ctx.lineTo(x2, y);
@@ -8004,33 +8029,32 @@
          green struck-through amount, "Successful", date, solid divider. Returns
          the y-coordinate where label/value rows should begin. */
       function drawReceiptHeader(ctx, W, padX, amount, dateStr) {
-        drawOpayWordmark(ctx, padX, 56, 30);
+        const iconSize = 72;
+        drawOpayWordmark(ctx, padX, 40, iconSize);
         ctx.fillStyle = '#1A1A2E';
-        ctx.font = '500 20px Inter, sans-serif';
+        ctx.font = '600 16px Inter, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Transaction Receipt', W - padX, 68);
+        ctx.fillText('Transaction Receipt', W - padX, 54);
 
         const amtStr = '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2 });
-        ctx.font = '800 56px Inter, sans-serif';
+        ctx.font = '800 40px Inter, sans-serif';
         ctx.fillStyle = '#1DCF9F';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
-        ctx.fillText(amtStr, W / 2, 168);
-        // The Inter "₦" glyph already renders with its own built-in double
-        // horizontal strike bar, so no extra strikethrough is drawn here.
+        ctx.fillText(amtStr, W / 2, 160);
 
         ctx.fillStyle = '#1A1A2E';
-        ctx.font = '600 28px Inter, sans-serif';
+        ctx.font = '700 32px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Successful', W / 2, 214);
+        ctx.fillText('Successful', W / 2, 208);
 
         ctx.fillStyle = '#9CA3AF';
-        ctx.font = '400 18px Inter, sans-serif';
-        ctx.fillText(dateStr, W / 2, 248);
+        ctx.font = '400 14px Inter, sans-serif';
+        ctx.fillText(dateStr, W / 2, 240);
 
-        drawSolidDivider(ctx, padX, 278, W - padX);
-        return 278;
+        drawSolidDivider(ctx, padX, 268, W - padX);
+        return 268;
       }
       function drawReceiptFooter(ctx, W, padX, startY) {
         ctx.font = '400 16px Inter, sans-serif';
@@ -8059,7 +8083,7 @@
          footer — no Paid-with/Session-ID/Fee/Narration rows, no dashed lines. */
       function drawOpayReceipt(canvas, data, targetW, targetH) {
         // Base design dimensions used throughout the drawing code.
-        const baseW = 1080, baseH = 827;
+        const baseW = 358, baseH = 620;
         // If a target size isn't supplied, render at the design size.
         targetW = targetW || baseW; targetH = targetH || baseH;
         // Device pixel ratio for crisp rendering on high-DPI screens
@@ -8076,7 +8100,7 @@
         const offsetY = (targetH - baseH * scale) / 2;
         ctx.setTransform(DPR * scale, 0, 0, DPR * scale, offsetX * DPR, offsetY * DPR);
         // For the drawing routines below we keep using baseW/baseH as W/H
-        const W = baseW, H = baseH, padX = 54, valColW = 460;
+        const W = baseW, H = baseH, padX = 24, valColW = 140;
         const creditTypes = ['TRANSFER RECEIVED', 'WALLET TOP-UP', 'INTEREST PAYOUT', 'CASHBACK'];
         const isCredit = creditTypes.includes(data.type) || !!data.isCredit;
         const recipName = (data.recipientName || '').toString().toUpperCase();
@@ -8097,15 +8121,15 @@
         measureCtx.font = '700 22px Inter, sans-serif';
         const recipLines = wrapLinesRightAligned(measureCtx, recipName, valColW);
         const senderLines = wrapLinesRightAligned(measureCtx, senderName, valColW);
-        const stdDetailRowH = 96; // increased row height for larger text
-        const lineH = 28;
+        const stdDetailRowH = 72;
+        const lineH = 18;
         const recipRowH = recipLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (recipLines.length - 1) * lineH;
         const senderRowH = senderLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (senderLines.length - 1) * lineH;
 
-        measureCtx.font = '400 16px Inter, sans-serif';
+        measureCtx.font = '400 14px Inter, sans-serif';
         const taglineLines = wrapLinesRightAligned(measureCtx, 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.', W - padX * 2);
-        const footerH = taglineLines.length * lineH + 80;
-        const refRowH = 52;
+        const footerH = taglineLines.length * lineH + 70;
+        const refRowH = 46;
 
         // Whatever vertical space remains becomes one buffer zone split between
         // top breathing room and bottom breathing room, rather than stretching
@@ -8119,12 +8143,12 @@
         y = drawTwoLineDetailRow(ctx, W, padX, y, senderRowH, 'Sender Details', senderName, senderSub, valColW);
 
         // Transaction No. — single line
-        ctx.font = '400 19px Inter, sans-serif';
+        ctx.font = '400 14px Inter, sans-serif';
         ctx.fillStyle = '#9CA3AF';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('Transaction No.', padX, y + refRowH / 2);
-        ctx.font = '600 19px Inter, sans-serif';
+        ctx.font = '500 14px Inter, sans-serif';
         ctx.fillStyle = '#1A1A2E';
         ctx.textAlign = 'right';
         ctx.fillText(data.sessionId || data.ref || '—', W - padX, y + refRowH / 2);
@@ -8137,32 +8161,32 @@
       /* Draws a "Label" (left) / "Bold Name" + "grey sub-line" (right, two
          lines) detail row, returning the y-coordinate immediately after it. */
       function drawTwoLineDetailRow(ctx, W, padX, y, rowH, label, name, sub, valColW) {
-        valColW = valColW || (W - padX * 2 - 280);
+        valColW = valColW || (W - padX * 2 - 120);
         // Vertically center the name+sub block within the row's allotted
         // height, matching how drawOpayBillReceipt centers its label rows —
         // keeps spacing even however many lines the name wraps to.
         const measureCtx = ctx;
-        measureCtx.font = '700 22px Inter, sans-serif';
+        measureCtx.font = '600 16px Inter, sans-serif';
         const nameLines = wrapLinesRightAligned(measureCtx, name, valColW);
-        const blockH = (nameLines.length - 1) * 28 + 28; // name lines + sub line
+        const blockH = (nameLines.length - 1) * 18 + 18;
         const rowCenterY = y + rowH / 2;
-        const nameY = rowCenterY - blockH / 2 + 12;
-        ctx.font = '400 18px Inter, sans-serif';
+        const nameY = rowCenterY - blockH / 2 + 10;
+        ctx.font = '600 16px Inter, sans-serif';
         ctx.fillStyle = '#9CA3AF';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
         ctx.fillText(label, padX, nameY);
-        ctx.font = '700 22px Inter, sans-serif';
+        ctx.font = '500 14px Inter, sans-serif';
         ctx.fillStyle = '#1A1A2E';
         ctx.textAlign = 'right';
         let ny = nameY;
         nameLines.forEach((line, i) => {
           ctx.fillText(line, W - padX, ny);
-          if (i < nameLines.length - 1) ny += 28;
+          if (i < nameLines.length - 1) ny += 18;
         });
-        ctx.font = '400 18px Inter, sans-serif';
+        ctx.font = '400 14px Inter, sans-serif';
         ctx.fillStyle = '#6B7280';
-        ctx.fillText(sub, W - padX, ny + 28);
+        ctx.fillText(sub, W - padX, ny + 18);
         return y + rowH;
       }
       function wrapLinesRightAligned(ctx, text, maxWidth) {
@@ -8183,14 +8207,15 @@
       }
       function drawWatermark(ctx, W, H) {
         ctx.save();
-        ctx.globalAlpha = 0.05;
+        ctx.globalAlpha = 0.12;
         ctx.fillStyle = '#9CA3AF';
-        ctx.font = '700 30px Inter, sans-serif';
+        ctx.font = '700 14px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const spacing = 150;
-        for (let y = 40; y < H; y += spacing) {
-          for (let x = 40; x < W; x += spacing) {
+        const spacingX = 50;
+        const spacingY = 40;
+        for (let y = -20; y < H + 20; y += spacingY) {
+          for (let x = -20; x < W + 20; x += spacingX) {
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(-22 * Math.PI / 180);
@@ -8259,7 +8284,7 @@
         return { units, token, meterNumber, serviceAddress };
       }
       function drawOpayBillReceipt(canvas, data, targetW, targetH) {
-        const baseW = 1080, baseH = 1168, padX = 54, valColW = 470;
+        const baseW = 358, baseH = 760, padX = 24, valColW = 140;
         targetW = targetW || baseW; targetH = targetH || baseH;
         const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
         canvas.width = Math.round(targetW * DPR);
@@ -8301,8 +8326,8 @@
         measureCtx.font = '600 17px Inter, sans-serif';
         const rowLines = rows.map(row => wrapLinesRightAligned(measureCtx, String(row[1] || '—'), valColW));
 
-        const stdRowH = 58;      // standard single-line row height (compact)
-        const lineH = 21;        // tight line height within a wrapped value
+        const stdRowH = 48;
+        const lineH = 18;
         const finalHeights = rowLines.map(lines =>
           lines.length <= 1 ? stdRowH : stdRowH + (lines.length - 1) * lineH
         );
@@ -8310,7 +8335,7 @@
 
         measureCtx.font = '400 14px Inter, sans-serif';
         const taglineLines = wrapLinesRightAligned(measureCtx, 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.', W - padX * 2);
-        const footerH = taglineLines.length * 22 + 70;
+        const footerH = taglineLines.length * 18 + 66;
 
         // Whatever vertical space is left after header + tight rows + footer
         // becomes one buffer zone — split between extra top breathing room
@@ -8327,13 +8352,13 @@
           const blockH = (lines.length - 1) * lineH;
           const firstLineY = rowCenterY - blockH / 2;
 
-          ctx.font = '400 16px Inter, sans-serif';
+          ctx.font = '600 16px Inter, sans-serif';
           ctx.fillStyle = '#9CA3AF';
           ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
           ctx.fillText(row[0], padX, rowCenterY);
 
-          ctx.font = '600 17px Inter, sans-serif';
+          ctx.font = '500 14px Inter, sans-serif';
           ctx.fillStyle = '#1A1A2E';
           ctx.textAlign = 'right';
           lines.forEach((line, li) => ctx.fillText(line, W - padX, firstLineY + li * lineH));
@@ -8353,13 +8378,21 @@
         if (!lastReceipt) { showToast('No receipt to show yet'); return; }
         const canvas = document.getElementById('receipt-canvas');
         const isBill = lastReceipt.type === 'BILL PAYMENT';
-        const exportW = 320;
-        const exportH = 500;
+        const exportW = 358;
+        const exportH = isBill ? 760 : 620;
         const render = () => {
           if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, exportW, exportH); }
           else { drawOpayReceipt(canvas, lastReceipt, exportW, exportH); }
           const img = document.getElementById('receipt-preview-img');
           img.src = canvas.toDataURL('image/png');
+          img.width = exportW;
+          img.height = exportH;
+          img.style.width = '100%';
+          img.style.height = '100%';
+          img.style.maxWidth = '100%';
+          img.style.maxHeight = '100%';
+          img.style.objectFit = 'contain';
+          img.style.display = 'block';
           document.getElementById('receipt-preview-overlay').classList.add('show');
         };
         // Canvas text can race ahead of the web-font finishing its first load —
