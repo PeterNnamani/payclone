@@ -74,6 +74,19 @@ module.exports = async function handler(req, res) {
             });
         }
 
+        const providerError = getProviderErrorMessage(smsResult, provider);
+        if (providerError) {
+            return res.status(502).json({
+                status: false,
+                mode: 'live',
+                provider,
+                phone,
+                message: providerError,
+                smsBody: message,
+                providerResponse: smsResult
+            });
+        }
+
         return res.status(200).json({
             status: true,
             mode: 'live',
@@ -138,9 +151,35 @@ function buildMessage({ recipientName, amount, note, bankName, accountNumber, ba
 }
 
 function getConfiguredProvider() {
+    const explicitProvider = (process.env.SMS_PROVIDER || '').toLowerCase();
+    if (explicitProvider === 'twilio' && process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM) return 'twilio';
+    if (explicitProvider === 'termii' && process.env.TERMII_API_KEY && process.env.TERMII_SENDER_ID) return 'termii';
+    if (explicitProvider === 'africas-talking' && process.env.AFRICAS_TALKING_USERNAME && process.env.AFRICAS_TALKING_API_KEY) return 'africas-talking';
+
     if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN && process.env.TWILIO_FROM) return 'twilio';
     if (process.env.TERMII_API_KEY && process.env.TERMII_SENDER_ID) return 'termii';
     if (process.env.AFRICAS_TALKING_USERNAME && process.env.AFRICAS_TALKING_API_KEY) return 'africas-talking';
+    return null;
+}
+
+function getProviderErrorMessage(smsResult, provider) {
+    if (!smsResult) return 'SMS provider did not return a response.';
+
+    const data = smsResult.data || {};
+    if (smsResult.status >= 400) {
+        if (typeof data === 'string' && data) return data;
+        if (data?.message) return data.message;
+        if (data?.detail) return data.detail;
+        if (data?.error) return data.error;
+        if (provider === 'twilio') return 'Twilio rejected the SMS request.';
+        if (provider === 'termii') return 'Termii rejected the SMS request.';
+        if (provider === 'africas-talking') return 'Africa\'s Talking rejected the SMS request.';
+    }
+
+    if (data?.status === 'error' || data?.status === 'failed') {
+        return data?.message || data?.error || 'SMS provider marked the message as failed.';
+    }
+
     return null;
 }
 

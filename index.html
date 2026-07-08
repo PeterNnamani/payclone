@@ -9993,8 +9993,8 @@
           const data = await response.json().catch(() => ({}));
 
           if (!response.ok || !data?.status) {
-            const message = data?.message || 'SMS could not be sent right now.';
-            console.warn('Transfer SMS notification failed:', message);
+            const message = data?.message || data?.error || 'SMS could not be sent right now.';
+            console.warn('Transfer SMS notification failed:', message, data);
             showToast(message);
           }
         } catch (error) {
@@ -10029,8 +10029,8 @@
         const receiptObj = {
           type: txType,
           amount: amt,
-          senderName: isTopup ? (t.name || 'Funding source') : 'CHUKWUEMEKA OBI',
-          senderAcct: isTopup ? (t.acct || '—') : '0123456789',
+          senderName: isTopup ? (t.name || 'Funding source') : (USER_NAME || 'OPAY'),
+          senderAcct: isTopup ? (t.acct || '—') : (USER_ACCT || '—'),
           bankName: t.bank || 'OPay Wallet',
           recipientName: isTopup ? 'CHUKWUEMEKA OBI' : (t.name || '—').toString().toUpperCase(),
           recipientAcct: isTopup ? '0123456789' : (t.acct || '—'),
