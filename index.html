@@ -8064,18 +8064,17 @@
         targetW = targetW || baseW; targetH = targetH || baseH;
         // Device pixel ratio for crisp rendering on high-DPI screens
         const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
-        // Set actual canvas pixel size to target size * DPR
         canvas.width = Math.round(targetW * DPR);
         canvas.height = Math.round(targetH * DPR);
         canvas.style.width = targetW + 'px';
         canvas.style.height = targetH + 'px';
         const ctx = canvas.getContext('2d');
-        // Scale the drawing so base design coordinates (baseW/baseH) map to
-        // the requested target dimensions. This lets the rest of the code
-        // use the original base coordinates while rendering to any target.
-        const scaleX = (targetW * DPR) / baseW;
-        const scaleY = (targetH * DPR) / baseH;
-        ctx.scale(scaleX, scaleY);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const scale = Math.min(targetW / baseW, targetH / baseH);
+        const offsetX = (targetW - baseW * scale) / 2;
+        const offsetY = (targetH - baseH * scale) / 2;
+        ctx.setTransform(DPR * scale, 0, 0, DPR * scale, offsetX * DPR, offsetY * DPR);
         // For the drawing routines below we keep using baseW/baseH as W/H
         const W = baseW, H = baseH, padX = 54, valColW = 460;
         const creditTypes = ['TRANSFER RECEIVED', 'WALLET TOP-UP', 'INTEREST PAYOUT', 'CASHBACK'];
@@ -8268,9 +8267,12 @@
         canvas.style.width = targetW + 'px';
         canvas.style.height = targetH + 'px';
         const ctx = canvas.getContext('2d');
-        const scaleX = (targetW * DPR) / baseW;
-        const scaleY = (targetH * DPR) / baseH;
-        ctx.scale(scaleX, scaleY);
+        ctx.setTransform(1, 0, 0, 1, 0, 0);
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        const scale = Math.min(targetW / baseW, targetH / baseH);
+        const offsetX = (targetW - baseW * scale) / 2;
+        const offsetY = (targetH - baseH * scale) / 2;
+        ctx.setTransform(DPR * scale, 0, 0, DPR * scale, offsetX * DPR, offsetY * DPR);
         const W = baseW, H = baseH;
         const synth = synthesizeBillFields(data);
         const rows = [
@@ -8352,7 +8354,7 @@
         const canvas = document.getElementById('receipt-canvas');
         const isBill = lastReceipt.type === 'BILL PAYMENT';
         const exportW = 320;
-        const exportH = 620;
+        const exportH = 420;
         const render = () => {
           if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, exportW, exportH); }
           else { drawOpayReceipt(canvas, lastReceipt, exportW, exportH); }
