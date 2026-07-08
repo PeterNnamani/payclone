@@ -3531,10 +3531,11 @@
     }
 
     .receipt-preview-scroll img {
-      width: 100%;
-      max-width: 380px;
+      width: 320px;
+      max-width: 320px;
       height: auto;
-      border-radius: 10px;
+      display: block;
+      border-radius: 12px;
       box-shadow: 0 10px 30px rgba(0, 0, 0, .35)
     }
 
@@ -8350,9 +8351,11 @@
         if (!lastReceipt) { showToast('No receipt to show yet'); return; }
         const canvas = document.getElementById('receipt-canvas');
         const isBill = lastReceipt.type === 'BILL PAYMENT';
+        const exportW = 320;
+        const exportH = 620;
         const render = () => {
-          if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, 380, 680); }
-          else { drawOpayReceipt(canvas, lastReceipt, 380, 680); }
+          if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, exportW, exportH); }
+          else { drawOpayReceipt(canvas, lastReceipt, exportW, exportH); }
           const img = document.getElementById('receipt-preview-img');
           img.src = canvas.toDataURL('image/png');
           document.getElementById('receipt-preview-overlay').classList.add('show');
