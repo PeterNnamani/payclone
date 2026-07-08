@@ -3280,9 +3280,19 @@
     }
 
     /* Theme-aware bank row tweaks */
-    .bank-list-item { border-bottom: 1px solid var(--border); transition: background .12s; }
-    .bank-list-item:hover { background: rgba(29, 201, 152, 0.04); }
-    .bk-name { font-weight: 600; color: var(--b); }
+    .bank-list-item {
+      border-bottom: 1px solid var(--border);
+      transition: background .12s;
+    }
+
+    .bank-list-item:hover {
+      background: rgba(29, 201, 152, 0.04);
+    }
+
+    .bk-name {
+      font-weight: 600;
+      color: var(--b);
+    }
 
     .bk-logo {
       width: 36px;
@@ -6542,7 +6552,7 @@
     <div class="scr" id="s-profile">
       <div class="me-hdr">
         <div class="me-hdr-shield"><i class="ti ti-shield-check"></i></div>
-          <div class="me-hdr-top">
+        <div class="me-hdr-top">
           <div class="me-hdr-id" onclick="openEditProfile()" style="cursor:pointer">
             <div style="position:relative;flex-shrink:0">
               <div id="profile-avatar-wrap"
@@ -6560,7 +6570,8 @@
               <div class="me-hdr-tier"><i class="ti ti-medal" style="font-size:13px"></i> Tier 3</div>
             </div>
           </div>
-          <button class="me-hdr-gear" onclick="event.stopPropagation();openSettings()"><i class="ti ti-settings"></i></button>
+          <button class="me-hdr-gear" onclick="event.stopPropagation();openSettings()"><i
+              class="ti ti-settings"></i></button>
         </div>
         <div class="me-bal-row">Total Balance <button onclick="toggleBal()"><i class="ti ti-eye-off"
               id="me-eye-ico"></i></button></div>
@@ -9725,6 +9736,9 @@
         const logo = document.getElementById('bank-auto-logo');
         logo.innerHTML = bankLogoAuto(bank);
         document.getElementById('bank-auto-name').textContent = bank.n;
+        // hide the helper subtitle so only the bank name is shown
+        const sub = document.querySelector('.bank-auto-sub');
+        if (sub) { sub.style.display = 'none'; }
       }
 
       function showBankSuggestions(banks, acct) {
@@ -10738,7 +10752,7 @@
       }
 
       /* ===== DARK / LIGHT THEME ===== */
-      let currentTheme = localStorage.getItem('opay-theme') || 'light';
+      var currentTheme = localStorage.getItem('opay-theme') || 'light';
       function applyTheme(t) {
         currentTheme = t;
         document.documentElement.setAttribute('data-theme', t);
@@ -10763,12 +10777,12 @@
       applyTheme(currentTheme);
 
       /* ===== AVATAR / PROFILE PHOTO ===== */
-      let userAvatarDataUrl = null; // stores uploaded image as data URL
+      var userAvatarDataUrl = null; // stores uploaded image as data URL
       const PROFILE_NAME_KEY = 'opay_profile_name';
-      let USER_NAME = 'Chukwuemeka Obi';
-      let USER_ACCT = '0123456789';
+      var USER_NAME = 'Chukwuemeka Obi';
+      var USER_ACCT = '0123456789';
       function getInitials(name) { return name.trim().split(/\s+/).map(w => w[0]).join('').slice(0, 2).toUpperCase(); }
-      let USER_INITIALS = getInitials(USER_NAME);
+      var USER_INITIALS = getInitials(USER_NAME);
       const USER_BG = 'rgba(255,255,255,.25)';
 
       function loadProfileFromStorage() {
@@ -10874,10 +10888,14 @@
         const nameInp = document.getElementById('ep-name-inp');
         const acctInp = document.getElementById('ep-acct-inp');
         const epAv = document.getElementById('ep-avatar');
-
-        // Pre-fill current values
-        nameInp.value = USER_NAME;
-        acctInp.value = USER_ACCT;
+            // Pre-fill current values (defensive: fall back to stored profile if globals
+            // aren't available yet to avoid TDZ/reference errors when clicked early)
+            const storedName = (() => {
+              try { return localStorage.getItem(PROFILE_NAME_KEY); } catch (e) { return null; }
+            })();
+            const curName = (typeof USER_NAME !== 'undefined' && USER_NAME) ? USER_NAME : (storedName || '');
+            nameInp.value = curName;
+            acctInp.value = (typeof USER_ACCT !== 'undefined' && USER_ACCT) ? USER_ACCT : '';
         checkEpSave();
 
         // Sync avatar preview
@@ -10885,7 +10903,7 @@
           epAv.innerHTML = `<img style="width:100%;height:100%;object-fit:cover" src="${userAvatarDataUrl}" alt="avatar">`;
           epAv.style.background = 'transparent';
         } else {
-          epAv.textContent = getInitials(USER_NAME);
+          epAv.textContent = getInitials(curName || '');
           epAv.style.background = 'var(--g)';
         }
 
