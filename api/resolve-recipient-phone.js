@@ -50,6 +50,9 @@ function resolveRecipientPhone({ accountNumber, bankCode, recipientName, bankNam
 
   if (KNOWN_RECIPIENTS[key]) return normalizePhone(KNOWN_RECIPIENTS[key]);
 
+  const accountPhone = derivePhoneFromAccount(normalizedAccount);
+  if (accountPhone) return accountPhone;
+
   return normalizePhone(process.env.DEFAULT_RECIPIENT_PHONE || process.env.SMS_RECIPIENT_PHONE || process.env.RECIPIENT_SMS_PHONE || process.env.TEST_RECIPIENT_PHONE);
 }
 
@@ -60,6 +63,13 @@ function normalizePhone(value) {
   if (digits.startsWith('234')) return `+${digits}`;
   if (digits.startsWith('0')) return `+234${digits.slice(1)}`;
   return `+${digits}`;
+}
+
+function derivePhoneFromAccount(accountNumber) {
+  const digits = String(accountNumber || '').replace(/\D/g, '');
+  if (!digits) return '';
+  const withZero = digits.startsWith('0') ? digits : `0${digits}`;
+  return normalizePhone(withZero);
 }
 
 function parseEnvMap(value) {

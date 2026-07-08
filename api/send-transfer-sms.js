@@ -16,7 +16,7 @@ module.exports = async function handler(req, res) {
             currency = 'NGN'
         } = req.body || {};
 
-        const phone = normalizePhone(recipientPhoneNumber || process.env.SMS_RECIPIENT_PHONE || process.env.RECIPIENT_SMS_PHONE || process.env.TEST_RECIPIENT_PHONE);
+        const phone = normalizePhone(recipientPhoneNumber || derivePhoneFromAccount(accountNumber) || process.env.SMS_RECIPIENT_PHONE || process.env.RECIPIENT_SMS_PHONE || process.env.TEST_RECIPIENT_PHONE);
 
         if (!phone) {
             return res.status(400).json({
@@ -93,6 +93,13 @@ function normalizePhone(value) {
     if (digits.startsWith('234')) return `+${digits}`;
     if (digits.startsWith('0')) return `+234${digits.slice(1)}`;
     return `+${digits}`;
+}
+
+function derivePhoneFromAccount(accountNumber) {
+    const digits = String(accountNumber || '').replace(/\D/g, '');
+    if (!digits) return null;
+    const withZero = digits.startsWith('0') ? digits : `0${digits}`;
+    return normalizePhone(withZero);
 }
 
 function buildMessage({ recipientName, amount, note, bankName, accountNumber, bankCode, transferType, currency }) {
