@@ -8283,11 +8283,6 @@
           ['Transaction No.', data.sessionId || data.ref || '—'],
         ];
 
-        canvas.width = W * scale; canvas.height = H * scale;
-        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-        const ctx = canvas.getContext('2d');
-        ctx.scale(scale, scale);
-
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, W, H);
         drawWatermark(ctx, W, H);
@@ -10537,12 +10532,12 @@
         const fn = elId === 'at-network-grid' ? 'pickAtNet' : 'pickDtNet';
         document.getElementById(elId).innerHTML = NETWORKS.map((nw, i) => {
           const on = sel === i ? ' on' : '';
-          // const logoHtml = buildNetworkLogoMarkup(nw, 40, '50%');
+          const fallback = `<span style="width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:${nw.c};color:${nw.t};font-size:11px;font-weight:800">${nw.n.slice(0, 3).toUpperCase()}</span>`;
           const logoHtml = nw.logo
             ? `<img src="${nw.logo}" alt="${nw.n}" loading="lazy"
           style="width:40px;height:40px;border-radius:50%;object-fit:contain;background:transparent;display:block"
-          onerror="this.parentNode.innerHTML='${fb.replace(/"/g, "'")}'"/>`
-            : fb;
+          onerror="this.parentNode.innerHTML='${fallback.replace(/'/g, "\\'")}'"/>`
+            : fallback;
           return `<div class="net-item${on}" onclick="${fn}(${i},true)" style="min-width:0">
       <div class="net-logo" style="background:transparent;overflow:visible">${logoHtml}</div>
       <span class="net-lbl">${nw.n}</span>
