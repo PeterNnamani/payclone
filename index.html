@@ -8056,23 +8056,33 @@
          as one row with the party's name in bold on the first line and
          "Bank | account" in grey beneath it, then Transaction No., then the
          footer — no Paid-with/Session-ID/Fee/Narration rows, no dashed lines. */
-      function drawOpayReceipt(canvas, data) {
-        // Fixed canvas size, exactly matching the real OPay transfer/payment
-        // receipt: 1080 x 827 logical px. Row heights are computed to fill that
-        // budget exactly, so the receipt never grows taller or shorter than the
-        // real app's regardless of name length.
-        const W = 1080, H = 827, padX = 54, valColW = 460, scale = 2;
+      function drawOpayReceipt(canvas, data, targetW, targetH) {
+        // Base design dimensions used throughout the drawing code.
+        const baseW = 1080, baseH = 827;
+        // If a target size isn't supplied, render at the design size.
+        targetW = targetW || baseW; targetH = targetH || baseH;
+        // Device pixel ratio for crisp rendering on high-DPI screens
+        const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+        // Set actual canvas pixel size to target size * DPR
+        canvas.width = Math.round(targetW * DPR);
+        canvas.height = Math.round(targetH * DPR);
+        canvas.style.width = targetW + 'px';
+        canvas.style.height = targetH + 'px';
+        const ctx = canvas.getContext('2d');
+        // Scale the drawing so base design coordinates (baseW/baseH) map to
+        // the requested target dimensions. This lets the rest of the code
+        // use the original base coordinates while rendering to any target.
+        const scaleX = (targetW * DPR) / baseW;
+        const scaleY = (targetH * DPR) / baseH;
+        ctx.scale(scaleX, scaleY);
+        // For the drawing routines below we keep using baseW/baseH as W/H
+        const W = baseW, H = baseH, padX = 54, valColW = 460;
         const creditTypes = ['TRANSFER RECEIVED', 'WALLET TOP-UP', 'INTEREST PAYOUT', 'CASHBACK'];
         const isCredit = creditTypes.includes(data.type) || !!data.isCredit;
-        const recipName = data.recipientName;
+        const recipName = (data.recipientName || '').toString().toUpperCase();
         const recipSub = (isCredit ? 'OPay' : data.bankName) + ' | ' + (isCredit ? data.recipientAcct : data.recipientAcct || '—');
-        const senderName = data.senderName;
-        const senderSub = (isCredit ? data.bankName : 'OPay') + ' | ' + (isCredit ? (data.senderAcct || '—') : maskAcct(data.senderAcct));
-
-        canvas.width = W * scale; canvas.height = H * scale;
-        canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
-        const ctx = canvas.getContext('2d');
-        ctx.scale(scale, scale);
+        const senderName = (data.senderName || '').toString().toUpperCase();
+        const senderSub = (isCredit ? data.bankName : 'OPay') + ' | ' + (isCredit ? (data.senderAcct || '—') : maskAcctTD(data.senderAcct));
 
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, W, H);
@@ -8248,13 +8258,19 @@
         const serviceAddress = `No ${Math.floor(1 + rnd() * 40)} ${street}, ${area}`;
         return { units, token, meterNumber, serviceAddress };
       }
-      function drawOpayBillReceipt(canvas, data) {
-        // Fixed canvas size, exactly matching the real OPay bill-payment receipt:
-        // 1080 x 1168 logical px. Value column is narrower than the transfer
-        // receipt's (250px vs 300px) so long addresses wrap onto two centred
-        // lines instead of stretching the row — keeping the receipt looking
-        // "moderately wide", never sprawling like a spreadsheet.
-        const W = 1080, H = 1168, padX = 54, valColW = 470, scale = 2;
+      function drawOpayBillReceipt(canvas, data, targetW, targetH) {
+        const baseW = 1080, baseH = 1168, padX = 54, valColW = 470;
+        targetW = targetW || baseW; targetH = targetH || baseH;
+        const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
+        canvas.width = Math.round(targetW * DPR);
+        canvas.height = Math.round(targetH * DPR);
+        canvas.style.width = targetW + 'px';
+        canvas.style.height = targetH + 'px';
+        const ctx = canvas.getContext('2d');
+        const scaleX = (targetW * DPR) / baseW;
+        const scaleY = (targetH * DPR) / baseH;
+        ctx.scale(scaleX, scaleY);
+        const W = baseW, H = baseH;
         const synth = synthesizeBillFields(data);
         const rows = [
           ['Provider', data.bankName || data.provider || '—'],
@@ -8340,8 +8356,8 @@
         const canvas = document.getElementById('receipt-canvas');
         const isBill = lastReceipt.type === 'BILL PAYMENT';
         const render = () => {
-          if (isBill) { drawOpayBillReceipt(canvas, lastReceipt); }
-          else { drawOpayReceipt(canvas, lastReceipt); }
+          if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, 127, 1080); }
+          else { drawOpayReceipt(canvas, lastReceipt, 127, 1080); }
           const img = document.getElementById('receipt-preview-img');
           img.src = canvas.toDataURL('image/png');
           document.getElementById('receipt-preview-overlay').classList.add('show');
