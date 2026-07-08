@@ -8005,13 +8005,13 @@
       function drawReceiptHeader(ctx, W, padX, amount, dateStr) {
         drawOpayWordmark(ctx, padX, 56, 30);
         ctx.fillStyle = '#1A1A2E';
-        ctx.font = '500 17px Inter, sans-serif';
+        ctx.font = '500 20px Inter, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
         ctx.fillText('Transaction Receipt', W - padX, 68);
 
         const amtStr = '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2 });
-        ctx.font = '800 46px Inter, sans-serif';
+        ctx.font = '800 56px Inter, sans-serif';
         ctx.fillStyle = '#1DCF9F';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
@@ -8020,26 +8020,26 @@
         // horizontal strike bar, so no extra strikethrough is drawn here.
 
         ctx.fillStyle = '#1A1A2E';
-        ctx.font = '600 24px Inter, sans-serif';
+        ctx.font = '600 28px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.fillText('Successful', W / 2, 214);
 
         ctx.fillStyle = '#9CA3AF';
-        ctx.font = '400 16px Inter, sans-serif';
+        ctx.font = '400 18px Inter, sans-serif';
         ctx.fillText(dateStr, W / 2, 248);
 
         drawSolidDivider(ctx, padX, 278, W - padX);
         return 278;
       }
       function drawReceiptFooter(ctx, W, padX, startY) {
-        ctx.font = '400 14px Inter, sans-serif';
+        ctx.font = '400 16px Inter, sans-serif';
         ctx.fillStyle = '#6B7280';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         const tagline = 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.';
         const words = tagline.split(' ');
         let line = '', lineY = startY;
-        const lineH = 22;
+        const lineH = 24;
         for (let w of words) {
           const test = line + (line ? ' ' : '') + w;
           if (ctx.measureText(test).width > W - padX * 2) {
@@ -8084,19 +8084,18 @@
         // compact spacing instead of stretching the two detail rows to fill
         // the full 827px canvas.
         const measureCtx = ctx;
-        measureCtx.font = '700 19px Inter, sans-serif';
+        measureCtx.font = '700 22px Inter, sans-serif';
         const recipLines = wrapLinesRightAligned(measureCtx, recipName, valColW);
         const senderLines = wrapLinesRightAligned(measureCtx, senderName, valColW);
-
-        const stdDetailRowH = 86; // standard single-line "name + sub" row height
-        const lineH = 24;
+        const stdDetailRowH = 96; // increased row height for larger text
+        const lineH = 28;
         const recipRowH = recipLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (recipLines.length - 1) * lineH;
         const senderRowH = senderLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (senderLines.length - 1) * lineH;
 
-        measureCtx.font = '400 14px Inter, sans-serif';
+        measureCtx.font = '400 16px Inter, sans-serif';
         const taglineLines = wrapLinesRightAligned(measureCtx, 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.', W - padX * 2);
-        const footerH = taglineLines.length * 22 + 70;
-        const refRowH = 46;
+        const footerH = taglineLines.length * lineH + 80;
+        const refRowH = 52;
 
         // Whatever vertical space remains becomes one buffer zone split between
         // top breathing room and bottom breathing room, rather than stretching
@@ -8110,12 +8109,12 @@
         y = drawTwoLineDetailRow(ctx, W, padX, y, senderRowH, 'Sender Details', senderName, senderSub, valColW);
 
         // Transaction No. — single line
-        ctx.font = '400 17px Inter, sans-serif';
+        ctx.font = '400 19px Inter, sans-serif';
         ctx.fillStyle = '#9CA3AF';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('Transaction No.', padX, y + refRowH / 2);
-        ctx.font = '600 17px Inter, sans-serif';
+        ctx.font = '600 19px Inter, sans-serif';
         ctx.fillStyle = '#1A1A2E';
         ctx.textAlign = 'right';
         ctx.fillText(data.sessionId || data.ref || '—', W - padX, y + refRowH / 2);
@@ -8133,29 +8132,27 @@
         // height, matching how drawOpayBillReceipt centers its label rows —
         // keeps spacing even however many lines the name wraps to.
         const measureCtx = ctx;
-        measureCtx.font = '700 19px Inter, sans-serif';
+        measureCtx.font = '700 22px Inter, sans-serif';
         const nameLines = wrapLinesRightAligned(measureCtx, name, valColW);
-        const blockH = (nameLines.length - 1) * 24 + 24; // name lines + sub line
+        const blockH = (nameLines.length - 1) * 28 + 28; // name lines + sub line
         const rowCenterY = y + rowH / 2;
         const nameY = rowCenterY - blockH / 2 + 12;
-
-        ctx.font = '400 16px Inter, sans-serif';
+        ctx.font = '400 18px Inter, sans-serif';
         ctx.fillStyle = '#9CA3AF';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
         ctx.fillText(label, padX, nameY);
-
-        ctx.font = '700 19px Inter, sans-serif';
+        ctx.font = '700 22px Inter, sans-serif';
         ctx.fillStyle = '#1A1A2E';
         ctx.textAlign = 'right';
         let ny = nameY;
         nameLines.forEach((line, i) => {
           ctx.fillText(line, W - padX, ny);
-          if (i < nameLines.length - 1) ny += 24;
+          if (i < nameLines.length - 1) ny += 28;
         });
-        ctx.font = '400 16px Inter, sans-serif';
+        ctx.font = '400 18px Inter, sans-serif';
         ctx.fillStyle = '#6B7280';
-        ctx.fillText(sub, W - padX, ny + 24);
+        ctx.fillText(sub, W - padX, ny + 28);
         return y + rowH;
       }
       function wrapLinesRightAligned(ctx, text, maxWidth) {
@@ -9661,8 +9658,11 @@
         // Update the auto-detected bank row (existing UI)
         showAutoDetectedBank(selBank);
         showManualBankRow(false);
+        // hide any suggestion panels (smart suggestions + bank suggestions)
         const sp = document.getElementById('smart-suggestions');
         if (sp) sp.style.display = 'none';
+        const bs = document.getElementById('bank-suggestions');
+        if (bs) bs.style.display = 'none';
 
         // Kick off Paystack verification
         clearTimeout(vTimer);
@@ -9761,6 +9761,8 @@
           chip.style.color = isMe ? 'var(--g)' : 'var(--b)';
           chip.classList.toggle('selected', isMe);
         });
+        // hide both suggestion UIs in case either was visible
+        const sp = document.getElementById('smart-suggestions'); if (sp) sp.style.display = 'none';
         hideBankSuggestions();
         showAutoDetectedBank(selBank);
         clearTimeout(vTimer);
@@ -10888,14 +10890,14 @@
         const nameInp = document.getElementById('ep-name-inp');
         const acctInp = document.getElementById('ep-acct-inp');
         const epAv = document.getElementById('ep-avatar');
-            // Pre-fill current values (defensive: fall back to stored profile if globals
-            // aren't available yet to avoid TDZ/reference errors when clicked early)
-            const storedName = (() => {
-              try { return localStorage.getItem(PROFILE_NAME_KEY); } catch (e) { return null; }
-            })();
-            const curName = (typeof USER_NAME !== 'undefined' && USER_NAME) ? USER_NAME : (storedName || '');
-            nameInp.value = curName;
-            acctInp.value = (typeof USER_ACCT !== 'undefined' && USER_ACCT) ? USER_ACCT : '';
+        // Pre-fill current values (defensive: fall back to stored profile if globals
+        // aren't available yet to avoid TDZ/reference errors when clicked early)
+        const storedName = (() => {
+          try { return localStorage.getItem(PROFILE_NAME_KEY); } catch (e) { return null; }
+        })();
+        const curName = (typeof USER_NAME !== 'undefined' && USER_NAME) ? USER_NAME : (storedName || '');
+        nameInp.value = curName;
+        acctInp.value = (typeof USER_ACCT !== 'undefined' && USER_ACCT) ? USER_ACCT : '';
         checkEpSave();
 
         // Sync avatar preview
