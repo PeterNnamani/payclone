@@ -42,21 +42,39 @@
     }
 
     [data-theme="dark"] {
-      --bg: #0F0F1A;
-      --w: #1A1A2E;
+      --bg: #0A0A12;
+      /* overall page background */
+      --w: #0F1724;
+      /* card / surface dark */
       --b: #FFFFFF;
-      --b2: #E2E8F0;
-      --b3: #94A3B8;
-      --b4: #64748B;
-      --b5: #334155;
-      --b6: #1E293B;
-      --b7: #1E293B;
-      --gl: #0D3D2E;
-      --gd: #3DDAAF;
-      --card-bg: #1A1A2E;
-      --surface: #0F0F1A;
-      --border: #1E293B;
-      --text-muted: #64748B;
+      /* main text color */
+      --b2: #E6F6EE;
+      /* secondary text / subtle */
+      --b3: #9FBFAD;
+      /* muted labels */
+      --b4: #87B99A;
+      --b5: #0D1F18;
+      /* toggle background fallback */
+      --b6: #071018;
+      /* borders / deep surface */
+      --b7: #081423;
+      /* hover backgrounds */
+      --gl: linear-gradient(135deg, #0D3D2E, #07281A);
+      /* green gradients */
+      --gd: #1DCF9F;
+      /* bright brand green */
+      --card-bg: #0F1724;
+      /* card background */
+      --surface: #071018;
+      /* app surface */
+      --border: #0D1F18;
+      /* card borders */
+      --text-muted: #7FAEA1;
+    }
+
+    /* Make default body text follow the theme variable */
+    body {
+      color: var(--b);
     }
 
     html,
@@ -3260,6 +3278,11 @@
     .bank-list-item:last-child {
       border-bottom: none
     }
+
+    /* Theme-aware bank row tweaks */
+    .bank-list-item { border-bottom: 1px solid var(--border); transition: background .12s; }
+    .bank-list-item:hover { background: rgba(29, 201, 152, 0.04); }
+    .bk-name { font-weight: 600; color: var(--b); }
 
     .bk-logo {
       width: 36px;
@@ -6519,14 +6542,15 @@
     <div class="scr" id="s-profile">
       <div class="me-hdr">
         <div class="me-hdr-shield"><i class="ti ti-shield-check"></i></div>
-        <div class="me-hdr-top">
-          <div class="me-hdr-id">
+          <div class="me-hdr-top">
+          <div class="me-hdr-id" onclick="openEditProfile()" style="cursor:pointer">
             <div style="position:relative;flex-shrink:0">
               <div id="profile-avatar-wrap"
-                style="width:46px;height:46px;border-radius:50%;background:var(--g);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;overflow:hidden;cursor:pointer"
-                onclick="openAvatarPicker()">CO</div>
+                style="width:46px;height:46px;border-radius:50%;background:var(--g);border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:800;color:#fff;overflow:hidden;"
+                onclick="openEditProfile()">CO</div>
               <div
-                style="position:absolute;bottom:-2px;right:-2px;width:17px;height:17px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--g)">
+                style="position:absolute;bottom:-2px;right:-2px;width:17px;height:17px;border-radius:50%;background:#fff;display:flex;align-items:center;justify-content:center;border:1.5px solid var(--g);cursor:pointer"
+                onclick="event.stopPropagation();openAvatarPicker()">
                 <i class="ti ti-camera" style="color:var(--g);font-size:8px"></i>
               </div>
             </div>
@@ -6536,7 +6560,7 @@
               <div class="me-hdr-tier"><i class="ti ti-medal" style="font-size:13px"></i> Tier 3</div>
             </div>
           </div>
-          <button class="me-hdr-gear" onclick="openSettings()"><i class="ti ti-settings"></i></button>
+          <button class="me-hdr-gear" onclick="event.stopPropagation();openSettings()"><i class="ti ti-settings"></i></button>
         </div>
         <div class="me-bal-row">Total Balance <button onclick="toggleBal()"><i class="ti ti-eye-off"
               id="me-eye-ico"></i></button></div>
@@ -8613,11 +8637,11 @@
         el.innerHTML = banks.map((b, i) => `
     <div class="bank-list-item bpicker-row" data-bank-name="${escHtml(b.name)}" style="cursor:pointer;transition:background .1s;padding:13px 16px">
       <div data-logo-idx="${i}" style="width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;overflow:hidden;background:#E2E8F0"></div>
-      <div style="flex:1;min-width:0;margin-left:12px">
-        <div style="font-size:14px;font-weight:600;color:#1A1A2E;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(b.name)}</div>
+        <div style="flex:1;min-width:0;margin-left:12px">
+        <div style="font-size:14px;font-weight:600;color:var(--b);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(b.name)}</div>
       </div>
-      <i class="ti ti-chevron-right" style="color:#D1D5DB;font-size:16px;flex-shrink:0"></i>
-    </div>${i < banks.length - 1 ? '<div style="height:1px;background:#F3F4F6;margin-left:68px"></div>' : ''}
+      <i class="ti ti-chevron-right" style="color:var(--b5);font-size:16px;flex-shrink:0"></i>
+    </div>${i < banks.length - 1 ? '<div style="height:1px;background:var(--border);margin-left:68px"></div>' : ''}
   `).join('');
         el.querySelectorAll('.bpicker-row').forEach(row => {
           row.addEventListener('click', () => selectBankFromEnriched(row.getAttribute('data-bank-name')));
@@ -10719,6 +10743,11 @@
         currentTheme = t;
         document.documentElement.setAttribute('data-theme', t);
         localStorage.setItem('opay-theme', t);
+        // update status bar / toolbar color on mobile browsers
+        try {
+          const meta = document.querySelector('meta[name="theme-color"]');
+          if (meta) meta.setAttribute('content', t === 'dark' ? '#0A0A12' : '#1DCF9F');
+        } catch (e) { }
         // Update settings toggle
         const knob = document.getElementById('theme-knob');
         const tog = document.getElementById('theme-toggle-row');
