@@ -1,3 +1,8 @@
+const fs = require('fs');
+const path = require('path');
+
+loadEnvFile();
+
 module.exports = async function handler(req, res) {
     if (req.method !== 'POST') {
         return res.status(405).json({ error: 'Method Not Allowed' });
@@ -93,6 +98,27 @@ function normalizePhone(value) {
     if (digits.startsWith('234')) return `+${digits}`;
     if (digits.startsWith('0')) return `+234${digits.slice(1)}`;
     return `+${digits}`;
+}
+
+function loadEnvFile() {
+    const envPath = path.resolve(__dirname, '..', '.env');
+    if (!fs.existsSync(envPath)) return;
+
+    const contents = fs.readFileSync(envPath, 'utf8');
+    for (const line of contents.split(/\r?\n/)) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed.startsWith('#')) continue;
+        const separatorIndex = trimmed.indexOf('=');
+        if (separatorIndex === -1) continue;
+        const key = trimmed.slice(0, separatorIndex).trim();
+        let value = trimmed.slice(separatorIndex + 1).trim();
+        if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+            value = value.slice(1, -1);
+        }
+        if (!process.env[key]) {
+            process.env[key] = value;
+        }
+    }
 }
 
 function derivePhoneFromAccount(accountNumber) {
