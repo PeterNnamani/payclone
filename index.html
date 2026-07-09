@@ -8113,7 +8113,7 @@
           } else { line = test; }
         }
         if (line) ctx.fillText(line, padX, lineY);
-        return lineY + lineH + 10;
+        return lineY + lineH;
       }
 
       /* ===== Transfer / top-up / OPay-to-OPay receipt =====
@@ -8164,22 +8164,22 @@
         measureCtx.font = '700 22px Inter, sans-serif';
         const recipLines = wrapLinesRightAligned(measureCtx, recipName, valColW);
         const senderLines = wrapLinesRightAligned(measureCtx, senderName, valColW);
-        const stdDetailRowH = 56;
+        const stdDetailRowH = 50;
         const lineH = 16;
         const recipRowH = recipLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (recipLines.length - 1) * lineH;
         const senderRowH = senderLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (senderLines.length - 1) * lineH;
 
         measureCtx.font = '400 11px Inter, sans-serif';
         const taglineLines = wrapLinesRightAligned(measureCtx, 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.', W - padX * 2);
-        const footerH = taglineLines.length * 14 + 58;
-        const refRowH = 36;
+        const footerH = taglineLines.length * 14 + 54;
+        const refRowH = 34;
 
         // Whatever vertical space remains becomes one buffer zone split between
         // top breathing room and bottom breathing room, rather than stretching
         // the two detail rows individually.
         const usedH = headerH + recipRowH + senderRowH + refRowH + footerH + 32;
         const leftover = Math.max(0, H - usedH);
-        const topBuffer = leftover * 0.4, bottomBuffer = leftover * 0.6;
+        const topBuffer = leftover * 0.65, bottomBuffer = leftover * 0.35;
 
         let y = headerH + topBuffer;
         y = drawTwoLineDetailRow(ctx, W, padX, y, recipRowH, 'Recipient Details', recipName, recipSub, valColW);
@@ -8198,8 +8198,8 @@
         ctx.fillText(data.sessionId || data.ref || '—', W - padX, y + refRowH / 2);
         y += refRowH + bottomBuffer;
 
-        drawSolidDivider(ctx, padX, y + 14, W - padX);
-        drawReceiptFooter(ctx, W, padX, y + 14 + 20);
+        drawSolidDivider(ctx, padX, y + 12, W - padX);
+        drawReceiptFooter(ctx, W, padX, y + 12 + 18);
       }
       /* Draws a "Label" (left) / "Bold Name" + "grey sub-line" (right, two
          lines) detail row, returning the y-coordinate immediately after it.
@@ -8213,8 +8213,8 @@
         const measureCtx = ctx;
         measureCtx.font = '600 15px Inter, sans-serif';
         const nameLines = wrapLinesRightAligned(measureCtx, name, valColW);
-        const lineGap = 16;
-        const blockH = (nameLines.length - 1) * lineGap + 16;
+        const lineGap = 14;
+        const blockH = (nameLines.length - 1) * lineGap + 14;
         const rowCenterY = y + rowH / 2;
         const nameY = rowCenterY - blockH / 2 + 8;
 
