@@ -7998,16 +7998,18 @@
          spacing on a 1080px-wide receipt — expressed here as ratios of the
          receipt width so it scales correctly at any width. */
       function drawScallopBorder(ctx, W, H) {
-        const spacing = W * 0.0278, r = W * 0.0093;
+        const r = 9;
+        const numScallops = 14;
+        const spacing = W / numScallops;
         ctx.save();
         ctx.fillStyle = '#1A1A2E';
-        // Top row: semicircles bulging down, centers sitting ON y=0
+        // Top row: 14 scallops with gaps
         for (let x = spacing / 2; x < W; x += spacing) {
           ctx.beginPath();
           ctx.arc(x, 0, r, 0, Math.PI * 2);
           ctx.fill();
         }
-        // Bottom row: semicircles bulging up, centers sitting ON y=H
+        // Bottom row: 14 scallops with gaps
         for (let x = spacing / 2; x < W; x += spacing) {
           ctx.beginPath();
           ctx.arc(x, H, r, 0, Math.PI * 2);
@@ -8029,42 +8031,42 @@
          green struck-through amount, "Successful", date, solid divider. Returns
          the y-coordinate where label/value rows should begin. */
       function drawReceiptHeader(ctx, W, padX, amount, dateStr) {
-        const iconSize = 72;
-        drawOpayWordmark(ctx, padX, 40, iconSize);
+        const iconSize = 28;
+        drawOpayWordmark(ctx, padX, 34, iconSize);
         ctx.fillStyle = '#1A1A2E';
-        ctx.font = '600 16px Inter, sans-serif';
+        ctx.font = '600 14px Inter, sans-serif';
         ctx.textAlign = 'right';
         ctx.textBaseline = 'middle';
-        ctx.fillText('Transaction Receipt', W - padX, 54);
+        ctx.fillText('Transaction Receipt', W - padX, 34);
 
         const amtStr = '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2 });
-        ctx.font = '800 40px Inter, sans-serif';
+        ctx.font = '800 32px Inter, sans-serif';
         ctx.fillStyle = '#1DCF9F';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
-        ctx.fillText(amtStr, W / 2, 160);
+        ctx.fillText(amtStr, W / 2, 140);
 
         ctx.fillStyle = '#1A1A2E';
-        ctx.font = '700 32px Inter, sans-serif';
+        ctx.font = '700 24px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Successful', W / 2, 208);
+        ctx.fillText('Successful', W / 2, 178);
 
         ctx.fillStyle = '#9CA3AF';
-        ctx.font = '400 14px Inter, sans-serif';
-        ctx.fillText(dateStr, W / 2, 240);
+        ctx.font = '400 12px Inter, sans-serif';
+        ctx.fillText(dateStr, W / 2, 202);
 
-        drawSolidDivider(ctx, padX, 268, W - padX);
-        return 268;
+        drawSolidDivider(ctx, padX, 220, W - padX);
+        return 220;
       }
       function drawReceiptFooter(ctx, W, padX, startY) {
-        ctx.font = '400 16px Inter, sans-serif';
+        ctx.font = '400 12px Inter, sans-serif';
         ctx.fillStyle = '#6B7280';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         const tagline = 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.';
         const words = tagline.split(' ');
         let line = '', lineY = startY;
-        const lineH = 24;
+        const lineH = 18;
         for (let w of words) {
           const test = line + (line ? ' ' : '') + w;
           if (ctx.measureText(test).width > W - padX * 2) {
@@ -8110,6 +8112,8 @@
 
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, W, H);
+        drawScallopBorder(ctx, W, 0);
+        drawScallopBorder(ctx, W, H);
         drawWatermark(ctx, W, H);
 
         const headerH = drawReceiptHeader(ctx, W, padX, data.amount, data.dateStr);
@@ -8156,7 +8160,6 @@
 
         drawSolidDivider(ctx, padX, y + 16, W - padX);
         drawReceiptFooter(ctx, W, padX, y + 16 + 26);
-        drawScallopBorder(ctx, W, H);
       }
       /* Draws a "Label" (left) / "Bold Name" + "grey sub-line" (right, two
          lines) detail row, returning the y-coordinate immediately after it. */
@@ -8209,19 +8212,22 @@
         ctx.save();
         ctx.globalAlpha = 0.12;
         ctx.fillStyle = '#9CA3AF';
-        ctx.font = '700 14px Inter, sans-serif';
+        ctx.font = '700 20px Inter, sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'middle';
-        const spacingX = 50;
-        const spacingY = 40;
-        for (let y = -20; y < H + 20; y += spacingY) {
-          for (let x = -20; x < W + 20; x += spacingX) {
+        const spacingX = W / 3.5;
+        const spacingY = 90;
+        let rowIndex = 0;
+        for (let y = 40; y < H; y += spacingY) {
+          const xOffset = rowIndex % 2 === 0 ? spacingX * 0.2 : spacingX * -0.3;
+          for (let x = W / 5 + xOffset; x < W; x += spacingX) {
             ctx.save();
             ctx.translate(x, y);
             ctx.rotate(-22 * Math.PI / 180);
             ctx.fillText('OPay', 0, 0);
             ctx.restore();
           }
+          rowIndex++;
         }
         ctx.restore();
       }
@@ -8237,8 +8243,6 @@
         return acct.slice(0, 3) + '****' + acct.slice(-3);
       }
       function drawOpayWordmark(ctx, x, y, h) {
-        // The teal "O" ring + navy notch, followed by "Pay" in dark navy bold —
-        // matches the OPay lockup used on its own receipts.
         ctx.save();
         ctx.translate(x, y);
         const r = h * 0.42;
@@ -8249,11 +8253,11 @@
         ctx.stroke();
         ctx.fillStyle = '#1A1A4D';
         ctx.fillRect(-h * 0.05, -h * 0.16, h * 0.32, h * 0.32);
-        ctx.font = '700 ' + (h * 0.95) + 'px Inter, sans-serif';
+        ctx.font = '700 ' + (h * 0.9) + 'px Inter, sans-serif';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = '#1A1A2E';
-        ctx.fillText('Pay', h * 1.05, 2);
+        ctx.fillText('Pay', h * 1.05, -2);
         ctx.restore();
       }
 
@@ -8313,6 +8317,8 @@
 
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, W, H);
+        drawScallopBorder(ctx, W, 0);
+        drawScallopBorder(ctx, W, H);
         drawWatermark(ctx, W, H);
 
         const headerH = drawReceiptHeader(ctx, W, padX, data.amount, data.dateStr);
@@ -8368,7 +8374,6 @@
         rowY += bottomBuffer;
         drawSolidDivider(ctx, padX, rowY + 16, W - padX);
         drawReceiptFooter(ctx, W, padX, rowY + 16 + 26);
-        drawScallopBorder(ctx, W, H);
       }
       /* Picks the correct receipt layout — bill-payment fields (Provider,
          Customer Name, Service Address, etc.) for bill/airtime/data/TV
