@@ -8123,7 +8123,7 @@
          footer — no Paid-with/Session-ID/Fee/Narration rows, no dashed lines. */
       function drawOpayReceipt(canvas, data, targetW, targetH) {
         // Base design dimensions used throughout the drawing code.
-        const baseW = 358, baseH = 580;
+        const baseW = 358, baseH = 530;
         // If a target size isn't supplied, render at the design size.
         targetW = targetW || baseW; targetH = targetH || baseH;
         // Device pixel ratio for crisp rendering on high-DPI screens
@@ -8339,7 +8339,7 @@
         return { units, token, meterNumber, serviceAddress };
       }
       function drawOpayBillReceipt(canvas, data, targetW, targetH) {
-        const baseW = 358, baseH = 720, padX = 24, valColW = 140;
+        const baseW = 358, baseH = 670, padX = 24, valColW = 140;
         targetW = targetW || baseW; targetH = targetH || baseH;
         const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
         canvas.width = Math.round(targetW * DPR);
@@ -8436,7 +8436,7 @@
         const canvas = document.getElementById('receipt-canvas');
         const isBill = lastReceipt.type === 'BILL PAYMENT';
         const exportW = 358;
-        const exportH = isBill ? 720 : 580;
+        const exportH = isBill ? 670 : 530;
         const render = () => {
           if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, exportW, exportH); }
           else { drawOpayReceipt(canvas, lastReceipt, exportW, exportH); }
