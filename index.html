@@ -8146,7 +8146,8 @@
         y = drawTwoLineDetailRow(ctx, W, padX, y, recipRowH, 'Recipient Details', recipName, recipSub, valColW);
         y = drawTwoLineDetailRow(ctx, W, padX, y, senderRowH, 'Sender Details', senderName, senderSub, valColW);
 
-        // Transaction No. — single line
+        // Transaction No. — single line, maintaining gap between label and value
+        const minGap = 20; // Minimum space between label and value
         ctx.font = '400 14px Inter, sans-serif';
         ctx.fillStyle = '#9CA3AF';
         ctx.textAlign = 'left';
@@ -8162,34 +8163,44 @@
         drawReceiptFooter(ctx, W, padX, y + 16 + 26);
       }
       /* Draws a "Label" (left) / "Bold Name" + "grey sub-line" (right, two
-         lines) detail row, returning the y-coordinate immediately after it. */
+         lines) detail row, returning the y-coordinate immediately after it.
+         Enforces a minimum gap between label and value columns. */
       function drawTwoLineDetailRow(ctx, W, padX, y, rowH, label, name, sub, valColW) {
-        valColW = valColW || (W - padX * 2 - 120);
-        // Vertically center the name+sub block within the row's allotted
-        // height, matching how drawOpayBillReceipt centers its label rows —
-        // keeps spacing even however many lines the name wraps to.
+        const minGap = 20; // Minimum space between label and value columns
+        const labelMaxWidth = W * 0.35; // Label column gets max 35% of width
+        valColW = valColW || Math.max(80, W - padX * 2 - labelMaxWidth - minGap - 30);
+        
+        // Vertically center the name+sub block within the row's allotted height
         const measureCtx = ctx;
         measureCtx.font = '600 16px Inter, sans-serif';
         const nameLines = wrapLinesRightAligned(measureCtx, name, valColW);
         const blockH = (nameLines.length - 1) * 18 + 18;
         const rowCenterY = y + rowH / 2;
         const nameY = rowCenterY - blockH / 2 + 10;
+        
+        // Draw label on left
         ctx.font = '600 16px Inter, sans-serif';
         ctx.fillStyle = '#9CA3AF';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
         ctx.fillText(label, padX, nameY);
+        
+        // Draw values on right with guaranteed gap
         ctx.font = '500 14px Inter, sans-serif';
         ctx.fillStyle = '#1A1A2E';
         ctx.textAlign = 'right';
+        const valueRightX = W - padX; // Right-align at right edge
         let ny = nameY;
         nameLines.forEach((line, i) => {
-          ctx.fillText(line, W - padX, ny);
+          ctx.fillText(line, valueRightX, ny);
           if (i < nameLines.length - 1) ny += 18;
         });
+        
+        // Draw subtitle in grey
         ctx.font = '400 14px Inter, sans-serif';
         ctx.fillStyle = '#6B7280';
-        ctx.fillText(sub, W - padX, ny + 18);
+        ctx.fillText(sub, valueRightX, ny + 18);
+        
         return y + rowH;
       }
       function wrapLinesRightAligned(ctx, text, maxWidth) {
@@ -8364,6 +8375,7 @@
           ctx.textBaseline = 'middle';
           ctx.fillText(row[0], padX, rowCenterY);
 
+          // Draw values on right with maintained gap from labels
           ctx.font = '500 14px Inter, sans-serif';
           ctx.fillStyle = '#1A1A2E';
           ctx.textAlign = 'right';
