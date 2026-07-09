@@ -8040,8 +8040,8 @@
         ctx.fillText('Transaction Receipt', W - padX, 34);
 
         const amtStr = '₦' + Number(amount).toLocaleString('en-NG', { minimumFractionDigits: 2 });
-        ctx.font = '800 32px Inter, sans-serif';
-        ctx.fillStyle = '#1DCF9F';
+        ctx.font = '600 28px Inter, sans-serif';
+        ctx.fillStyle = '#3DDAAF';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
         ctx.fillText(amtStr, W / 2, 140);
@@ -8057,6 +8057,44 @@
 
         drawSolidDivider(ctx, padX, 220, W - padX);
         return 220;
+      }
+      function abbreviateBankName(name) {
+        const raw = String(name || '').trim();
+        if (!raw) return '—';
+        const normalized = raw.toLowerCase().replace(/\s+/g, ' ');
+        const map = {
+          'united bank for africa': 'UBA',
+          'united bank for africa plc': 'UBA',
+          'access bank': 'Access Bank',
+          'access bank plc': 'Access Bank',
+          'guaranty trust bank': 'GTBank',
+          'guaranty trust holding company plc': 'GTCO',
+          'first bank of nigeria': 'First Bank',
+          'first bank of nigeria limited': 'First Bank',
+          'zenith bank': 'Zenith Bank',
+          'zenith bank plc': 'Zenith Bank',
+          'fidelity bank': 'Fidelity Bank',
+          'fidelity bank plc': 'Fidelity Bank',
+          'union bank of nigeria': 'Union Bank',
+          'union bank of nigeria plc': 'Union Bank',
+          'sterling bank': 'Sterling Bank',
+          'sterling bank plc': 'Sterling Bank',
+          'ecobank nigeria': 'Ecobank',
+          'ecobank nigeria plc': 'Ecobank',
+          'polaris bank': 'Polaris Bank',
+          'polaris bank limited': 'Polaris Bank',
+          'jaiz bank': 'Jaiz Bank',
+          'jaiz bank plc': 'Jaiz Bank',
+          'keystone bank': 'Keystone Bank',
+          'keystone bank limited': 'Keystone Bank',
+          'stanbic ibtc bank': 'Stanbic IBTC',
+          'stanbic ibtc bank plc': 'Stanbic IBTC',
+          'wema bank': 'Wema Bank',
+          'wema bank plc': 'Wema Bank',
+          'opay': 'OPay',
+          'opay bank': 'OPay'
+        };
+        return map[normalized] || raw;
       }
       function drawReceiptFooter(ctx, W, padX, startY) {
         ctx.font = '400 12px Inter, sans-serif';
@@ -8085,7 +8123,7 @@
          footer — no Paid-with/Session-ID/Fee/Narration rows, no dashed lines. */
       function drawOpayReceipt(canvas, data, targetW, targetH) {
         // Base design dimensions used throughout the drawing code.
-        const baseW = 358, baseH = 620;
+        const baseW = 358, baseH = 610;
         // If a target size isn't supplied, render at the design size.
         targetW = targetW || baseW; targetH = targetH || baseH;
         // Device pixel ratio for crisp rendering on high-DPI screens
@@ -8105,10 +8143,11 @@
         const W = baseW, H = baseH, padX = 24, valColW = 140;
         const creditTypes = ['TRANSFER RECEIVED', 'WALLET TOP-UP', 'INTEREST PAYOUT', 'CASHBACK'];
         const isCredit = creditTypes.includes(data.type) || !!data.isCredit;
+        const bankLabel = abbreviateBankName(data.bankName || 'OPay');
         const recipName = (data.recipientName || '').toString().toUpperCase();
-        const recipSub = (isCredit ? 'OPay' : data.bankName) + ' | ' + (isCredit ? data.recipientAcct : data.recipientAcct || '—');
+        const recipSub = (isCredit ? 'OPay' : bankLabel) + ' | ' + (isCredit ? data.recipientAcct : data.recipientAcct || '—');
         const senderName = (data.senderName || '').toString().toUpperCase();
-        const senderSub = (isCredit ? data.bankName : 'OPay') + ' | ' + (isCredit ? (data.senderAcct || '—') : maskAcctTD(data.senderAcct));
+        const senderSub = (isCredit ? bankLabel : 'OPay') + ' | ' + (isCredit ? (data.senderAcct || '—') : maskAcctTD(data.senderAcct));
 
         ctx.fillStyle = '#FFFFFF';
         ctx.fillRect(0, 0, W, H);
@@ -8125,15 +8164,15 @@
         measureCtx.font = '700 22px Inter, sans-serif';
         const recipLines = wrapLinesRightAligned(measureCtx, recipName, valColW);
         const senderLines = wrapLinesRightAligned(measureCtx, senderName, valColW);
-        const stdDetailRowH = 72;
-        const lineH = 18;
+        const stdDetailRowH = 62;
+        const lineH = 16;
         const recipRowH = recipLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (recipLines.length - 1) * lineH;
         const senderRowH = senderLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (senderLines.length - 1) * lineH;
 
         measureCtx.font = '400 14px Inter, sans-serif';
         const taglineLines = wrapLinesRightAligned(measureCtx, 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.', W - padX * 2);
-        const footerH = taglineLines.length * lineH + 70;
-        const refRowH = 46;
+        const footerH = taglineLines.length * lineH + 68;
+        const refRowH = 42;
 
         // Whatever vertical space remains becomes one buffer zone split between
         // top breathing room and bottom breathing room, rather than stretching
@@ -8166,41 +8205,42 @@
          lines) detail row, returning the y-coordinate immediately after it.
          Enforces a minimum gap between label and value columns. */
       function drawTwoLineDetailRow(ctx, W, padX, y, rowH, label, name, sub, valColW) {
-        const minGap = 20; // Minimum space between label and value columns
-        const labelMaxWidth = W * 0.35; // Label column gets max 35% of width
-        valColW = valColW || Math.max(80, W - padX * 2 - labelMaxWidth - minGap - 30);
-        
+        const minGap = 12; // Minimum space between label and value columns
+        const labelMaxWidth = W * 0.34; // Label column gets max 34% of width
+        valColW = valColW || Math.max(80, W - padX * 2 - labelMaxWidth - minGap - 24);
+
         // Vertically center the name+sub block within the row's allotted height
         const measureCtx = ctx;
-        measureCtx.font = '600 16px Inter, sans-serif';
+        measureCtx.font = '600 15px Inter, sans-serif';
         const nameLines = wrapLinesRightAligned(measureCtx, name, valColW);
-        const blockH = (nameLines.length - 1) * 18 + 18;
+        const lineGap = 16;
+        const blockH = (nameLines.length - 1) * lineGap + 16;
         const rowCenterY = y + rowH / 2;
-        const nameY = rowCenterY - blockH / 2 + 10;
-        
+        const nameY = rowCenterY - blockH / 2 + 8;
+
         // Draw label on left
-        ctx.font = '600 16px Inter, sans-serif';
+        ctx.font = '600 15px Inter, sans-serif';
         ctx.fillStyle = '#9CA3AF';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'alphabetic';
         ctx.fillText(label, padX, nameY);
-        
+
         // Draw values on right with guaranteed gap
-        ctx.font = '500 14px Inter, sans-serif';
+        ctx.font = '500 13px Inter, sans-serif';
         ctx.fillStyle = '#1A1A2E';
         ctx.textAlign = 'right';
         const valueRightX = W - padX; // Right-align at right edge
         let ny = nameY;
         nameLines.forEach((line, i) => {
           ctx.fillText(line, valueRightX, ny);
-          if (i < nameLines.length - 1) ny += 18;
+          if (i < nameLines.length - 1) ny += lineGap;
         });
-        
+
         // Draw subtitle in grey
-        ctx.font = '400 14px Inter, sans-serif';
+        ctx.font = '400 13px Inter, sans-serif';
         ctx.fillStyle = '#6B7280';
-        ctx.fillText(sub, valueRightX, ny + 18);
-        
+        ctx.fillText(sub, valueRightX, ny + lineGap);
+
         return y + rowH;
       }
       function wrapLinesRightAligned(ctx, text, maxWidth) {
@@ -8299,7 +8339,7 @@
         return { units, token, meterNumber, serviceAddress };
       }
       function drawOpayBillReceipt(canvas, data, targetW, targetH) {
-        const baseW = 358, baseH = 760, padX = 24, valColW = 140;
+        const baseW = 358, baseH = 750, padX = 24, valColW = 140;
         targetW = targetW || baseW; targetH = targetH || baseH;
         const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
         canvas.width = Math.round(targetW * DPR);
@@ -8316,7 +8356,7 @@
         const W = baseW, H = baseH;
         const synth = synthesizeBillFields(data);
         const rows = [
-          ['Provider', data.bankName || data.provider || '—'],
+          ['Provider', abbreviateBankName(data.bankName || data.provider || '—')],
           ['Customer Name', (data.recipientName || '—')],
           ['Service Address', data.serviceAddress || synth.serviceAddress],
           ['Purchase Type', 'Prepaid'],
@@ -8343,8 +8383,8 @@
         measureCtx.font = '600 17px Inter, sans-serif';
         const rowLines = rows.map(row => wrapLinesRightAligned(measureCtx, String(row[1] || '—'), valColW));
 
-        const stdRowH = 48;
-        const lineH = 18;
+        const stdRowH = 42;
+        const lineH = 16;
         const finalHeights = rowLines.map(lines =>
           lines.length <= 1 ? stdRowH : stdRowH + (lines.length - 1) * lineH
         );
@@ -8369,14 +8409,14 @@
           const blockH = (lines.length - 1) * lineH;
           const firstLineY = rowCenterY - blockH / 2;
 
-          ctx.font = '600 16px Inter, sans-serif';
+          ctx.font = '600 15px Inter, sans-serif';
           ctx.fillStyle = '#9CA3AF';
           ctx.textAlign = 'left';
           ctx.textBaseline = 'middle';
           ctx.fillText(row[0], padX, rowCenterY);
 
           // Draw values on right with maintained gap from labels
-          ctx.font = '500 14px Inter, sans-serif';
+          ctx.font = '500 13px Inter, sans-serif';
           ctx.fillStyle = '#1A1A2E';
           ctx.textAlign = 'right';
           lines.forEach((line, li) => ctx.fillText(line, W - padX, firstLineY + li * lineH));
@@ -8396,7 +8436,7 @@
         const canvas = document.getElementById('receipt-canvas');
         const isBill = lastReceipt.type === 'BILL PAYMENT';
         const exportW = 358;
-        const exportH = isBill ? 760 : 620;
+        const exportH = isBill ? 750 : 610;
         const render = () => {
           if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, exportW, exportH); }
           else { drawOpayReceipt(canvas, lastReceipt, exportW, exportH); }
