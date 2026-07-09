@@ -8097,14 +8097,14 @@
         return map[normalized] || raw;
       }
       function drawReceiptFooter(ctx, W, padX, startY) {
-        ctx.font = '400 11px Inter, sans-serif';
+        ctx.font = '400 10px Inter, sans-serif';
         ctx.fillStyle = '#6B7280';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         const tagline = 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.';
         const words = tagline.split(' ');
         let line = '', lineY = startY;
-        const lineH = 14;
+        const lineH = 13;
         for (let w of words) {
           const test = line + (line ? ' ' : '') + w;
           if (ctx.measureText(test).width > W - padX * 2) {
@@ -8113,7 +8113,7 @@
           } else { line = test; }
         }
         if (line) ctx.fillText(line, padX, lineY);
-        return lineY + lineH;
+        return lineY + lineH + 14;
       }
 
       /* ===== Transfer / top-up / OPay-to-OPay receipt =====
@@ -8164,22 +8164,22 @@
         measureCtx.font = '700 22px Inter, sans-serif';
         const recipLines = wrapLinesRightAligned(measureCtx, recipName, valColW);
         const senderLines = wrapLinesRightAligned(measureCtx, senderName, valColW);
-        const stdDetailRowH = 50;
+        const stdDetailRowH = 44;
         const lineH = 16;
         const recipRowH = recipLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (recipLines.length - 1) * lineH;
         const senderRowH = senderLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (senderLines.length - 1) * lineH;
 
-        measureCtx.font = '400 11px Inter, sans-serif';
+        measureCtx.font = '400 10px Inter, sans-serif';
         const taglineLines = wrapLinesRightAligned(measureCtx, 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.', W - padX * 2);
-        const footerH = taglineLines.length * 14 + 54;
-        const refRowH = 34;
+        const footerH = taglineLines.length * 13 + 50;
+        const refRowH = 30;
 
         // Whatever vertical space remains becomes one buffer zone split between
         // top breathing room and bottom breathing room, rather than stretching
         // the two detail rows individually.
         const usedH = headerH + recipRowH + senderRowH + refRowH + footerH + 32;
         const leftover = Math.max(0, H - usedH);
-        const topBuffer = leftover * 0.65, bottomBuffer = leftover * 0.35;
+        const topBuffer = leftover * 0.3, bottomBuffer = leftover * 0.7;
 
         let y = headerH + topBuffer;
         y = drawTwoLineDetailRow(ctx, W, padX, y, recipRowH, 'Recipient Details', recipName, recipSub, valColW);
@@ -8198,8 +8198,8 @@
         ctx.fillText(data.sessionId || data.ref || '—', W - padX, y + refRowH / 2);
         y += refRowH + bottomBuffer;
 
-        drawSolidDivider(ctx, padX, y + 12, W - padX);
-        drawReceiptFooter(ctx, W, padX, y + 12 + 18);
+        drawSolidDivider(ctx, padX, y + 10, W - padX);
+        drawReceiptFooter(ctx, W, padX, y + 10 + 16);
       }
       /* Draws a "Label" (left) / "Bold Name" + "grey sub-line" (right, two
          lines) detail row, returning the y-coordinate immediately after it.
@@ -8396,11 +8396,10 @@
 
         // Whatever vertical space is left after header + tight rows + footer
         // becomes one buffer zone — split between extra top breathing room
-        // (above the first row) and bottom breathing room (before the divider),
-        // instead of stretching every row individually.
+        // (above the first row) and bottom breathing room (before the divider).
         const usedH = headerH + totalRowsH + footerH + 32;
         const leftover = Math.max(0, H - usedH);
-        const topBuffer = leftover * 0.35, bottomBuffer = leftover * 0.65;
+        const topBuffer = leftover * 0.3, bottomBuffer = leftover * 0.7;
 
         let rowY = headerH + topBuffer;
         rows.forEach((row, i) => {
