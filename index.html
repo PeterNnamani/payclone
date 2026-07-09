@@ -8044,19 +8044,19 @@
         ctx.fillStyle = '#3DDAAF';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'alphabetic';
-        ctx.fillText(amtStr, W / 2, 140);
+        ctx.fillText(amtStr, W / 2, 132);
 
         ctx.fillStyle = '#1A1A2E';
         ctx.font = '700 24px Inter, sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('Successful', W / 2, 178);
+        ctx.fillText('Successful', W / 2, 170);
 
         ctx.fillStyle = '#9CA3AF';
         ctx.font = '400 12px Inter, sans-serif';
-        ctx.fillText(dateStr, W / 2, 202);
+        ctx.fillText(dateStr, W / 2, 194);
 
-        drawSolidDivider(ctx, padX, 220, W - padX);
-        return 220;
+        drawSolidDivider(ctx, padX, 212, W - padX);
+        return 212;
       }
       function abbreviateBankName(name) {
         const raw = String(name || '').trim();
@@ -8097,14 +8097,14 @@
         return map[normalized] || raw;
       }
       function drawReceiptFooter(ctx, W, padX, startY) {
-        ctx.font = '400 12px Inter, sans-serif';
+        ctx.font = '400 11px Inter, sans-serif';
         ctx.fillStyle = '#6B7280';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'top';
         const tagline = 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.';
         const words = tagline.split(' ');
         let line = '', lineY = startY;
-        const lineH = 18;
+        const lineH = 14;
         for (let w of words) {
           const test = line + (line ? ' ' : '') + w;
           if (ctx.measureText(test).width > W - padX * 2) {
@@ -8113,7 +8113,7 @@
           } else { line = test; }
         }
         if (line) ctx.fillText(line, padX, lineY);
-        return lineY + lineH;
+        return lineY + lineH + 10;
       }
 
       /* ===== Transfer / top-up / OPay-to-OPay receipt =====
@@ -8123,7 +8123,7 @@
          footer — no Paid-with/Session-ID/Fee/Narration rows, no dashed lines. */
       function drawOpayReceipt(canvas, data, targetW, targetH) {
         // Base design dimensions used throughout the drawing code.
-        const baseW = 358, baseH = 500;
+        const baseW = 358, baseH = 490;
         // If a target size isn't supplied, render at the design size.
         targetW = targetW || baseW; targetH = targetH || baseH;
         // Device pixel ratio for crisp rendering on high-DPI screens
@@ -8164,15 +8164,15 @@
         measureCtx.font = '700 22px Inter, sans-serif';
         const recipLines = wrapLinesRightAligned(measureCtx, recipName, valColW);
         const senderLines = wrapLinesRightAligned(measureCtx, senderName, valColW);
-        const stdDetailRowH = 62;
+        const stdDetailRowH = 56;
         const lineH = 16;
         const recipRowH = recipLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (recipLines.length - 1) * lineH;
         const senderRowH = senderLines.length <= 1 ? stdDetailRowH : stdDetailRowH + (senderLines.length - 1) * lineH;
 
-        measureCtx.font = '400 14px Inter, sans-serif';
+        measureCtx.font = '400 11px Inter, sans-serif';
         const taglineLines = wrapLinesRightAligned(measureCtx, 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.', W - padX * 2);
-        const footerH = taglineLines.length * lineH + 68;
-        const refRowH = 42;
+        const footerH = taglineLines.length * 14 + 58;
+        const refRowH = 36;
 
         // Whatever vertical space remains becomes one buffer zone split between
         // top breathing room and bottom breathing room, rather than stretching
@@ -8187,19 +8187,19 @@
 
         // Transaction No. — single line, maintaining gap between label and value
         const minGap = 20; // Minimum space between label and value
-        ctx.font = '400 14px Inter, sans-serif';
+        ctx.font = '400 13px Inter, sans-serif';
         ctx.fillStyle = '#9CA3AF';
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillText('Transaction No.', padX, y + refRowH / 2);
-        ctx.font = '500 14px Inter, sans-serif';
+        ctx.font = '500 13px Inter, sans-serif';
         ctx.fillStyle = '#1A1A2E';
         ctx.textAlign = 'right';
         ctx.fillText(data.sessionId || data.ref || '—', W - padX, y + refRowH / 2);
         y += refRowH + bottomBuffer;
 
-        drawSolidDivider(ctx, padX, y + 16, W - padX);
-        drawReceiptFooter(ctx, W, padX, y + 16 + 26 + 16);
+        drawSolidDivider(ctx, padX, y + 14, W - padX);
+        drawReceiptFooter(ctx, W, padX, y + 14 + 20);
       }
       /* Draws a "Label" (left) / "Bold Name" + "grey sub-line" (right, two
          lines) detail row, returning the y-coordinate immediately after it.
@@ -8339,7 +8339,7 @@
         return { units, token, meterNumber, serviceAddress };
       }
       function drawOpayBillReceipt(canvas, data, targetW, targetH) {
-        const baseW = 358, baseH = 500, padX = 24, valColW = 140;
+        const baseW = 358, baseH = 490, padX = 24, valColW = 140;
         targetW = targetW || baseW; targetH = targetH || baseH;
         const DPR = (typeof window !== 'undefined' && window.devicePixelRatio) ? window.devicePixelRatio : 1;
         canvas.width = Math.round(targetW * DPR);
@@ -8383,16 +8383,16 @@
         measureCtx.font = '600 17px Inter, sans-serif';
         const rowLines = rows.map(row => wrapLinesRightAligned(measureCtx, String(row[1] || '—'), valColW));
 
-        const stdRowH = 42;
-        const lineH = 16;
+        const stdRowH = 38;
+        const lineH = 14;
         const finalHeights = rowLines.map(lines =>
           lines.length <= 1 ? stdRowH : stdRowH + (lines.length - 1) * lineH
         );
         const totalRowsH = finalHeights.reduce((a, b) => a + b, 0);
 
-        measureCtx.font = '400 14px Inter, sans-serif';
+        measureCtx.font = '400 11px Inter, sans-serif';
         const taglineLines = wrapLinesRightAligned(measureCtx, 'Enjoy a better life with OPay. Get free transfers, withdrawals, bill payments, instant loans, and good annual interest On your savings. OPay is licensed by the Central Bank of Nigeria and insured by the NDIC.', W - padX * 2);
-        const footerH = taglineLines.length * 18 + 66;
+        const footerH = taglineLines.length * 14 + 58;
 
         // Whatever vertical space is left after header + tight rows + footer
         // becomes one buffer zone — split between extra top breathing room
@@ -8423,9 +8423,9 @@
           rowY += h;
         });
 
-        rowY += bottomBuffer + 16;
-        drawSolidDivider(ctx, padX, rowY + 16, W - padX);
-        drawReceiptFooter(ctx, W, padX, rowY + 16 + 26 + 16);
+        rowY += bottomBuffer + 10;
+        drawSolidDivider(ctx, padX, rowY + 14, W - padX);
+        drawReceiptFooter(ctx, W, padX, rowY + 14 + 20);
       }
       /* Picks the correct receipt layout — bill-payment fields (Provider,
          Customer Name, Service Address, etc.) for bill/airtime/data/TV
@@ -8436,7 +8436,7 @@
         const canvas = document.getElementById('receipt-canvas');
         const isBill = lastReceipt.type === 'BILL PAYMENT';
         const exportW = 358;
-        const exportH = 500;
+        const exportH = 490;
         const render = () => {
           if (isBill) { drawOpayBillReceipt(canvas, lastReceipt, exportW, exportH); }
           else { drawOpayReceipt(canvas, lastReceipt, exportW, exportH); }
